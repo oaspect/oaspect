@@ -41,9 +41,19 @@ describe("multipart requests", () => {
       for (const client of language.clients) {
         const code = client.build(request);
         assert.ok(code.length > 0, `${language.key}:${client.key}`);
-        assert.ok(!code.includes('"caption": "hi"'), `${language.key}:${client.key} must not send JSON`);
+        assert.ok(!/"caption": "hi",\s*\n/.test(code), `${language.key}:${client.key} must not send the JSON body`);
       }
     }
+  });
+
+  test("repeated text fields stay repeated in clients that key by name", () => {
+    const request = buildRequest(operation, { values: {}, ...defaultBody(spec, operation) });
+    const build = (language: string, client: string) =>
+      SNIPPET_LANGUAGES.find((item) => item.key === language)!.clients.find((item) => item.key === client)!.build(request);
+    assert.match(build("python", "httpx"), /data = \{"caption": "hi", "tags": \["a", "b"\]\}/);
+    assert.match(build("powershell", "restmethod"), /'tags' = @\('a', 'b'\)/);
+    assert.equal(build("powershell", "restmethod").match(/'tags'/g)?.length, 1);
+    assert.match(build("dart", "http"), /MultipartFile\.fromString\('tags', 'a'\)/);
   });
 
   test("JavaScript and Node multipart samples parse", () => {

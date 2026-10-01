@@ -17,6 +17,15 @@ const hasCommand = (command) => spawnSync("sh", ["-c", `command -v ${command}`])
 const scratch = mkdtempSync(join(tmpdir(), "pv-docs-snippets-"));
 
 describe("snippets", () => {
+  test("Kotlin raw strings escape $ as ${'$'}", () => {
+    const kotlin = SNIPPET_LANGUAGES.find((item) => item.key === "kotlin")!;
+    for (const client of kotlin.clients) {
+      const code = client.build(REQUESTS.withBody);
+      assert.ok(code.includes("${'$'}HOME"), `kotlin:${client.key}`);
+      assert.ok(!/[^}]\$HOME/.test(code), `kotlin:${client.key} leaves no bare $HOME`);
+    }
+  });
+
   test("every client builds for requests with and without a body", () => {
     for (const { language, client } of clients) {
       for (const [name, request] of Object.entries(REQUESTS)) {

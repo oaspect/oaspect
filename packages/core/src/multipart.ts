@@ -160,9 +160,13 @@ function pythonClient(library: string) {
       lines.push(`headers = {${headerList(headers).map(([key, value]) => `${pyString(key)}: ${pyString(value)}`).join(", ")}}`);
       args.push("headers=headers");
     }
-    const textFields = texts(form);
-    if (textFields.length) {
-      lines.push(`data = [${textFields.map((field) => `(${pyString(field.name)}, ${pyString(field.value ?? "")})`).join(", ")}]`);
+    // A dict, with a list for repeated names: httpx rejects a list of tuples
+    // next to files, and requests accepts both.
+    const grouped = new Map<string, string[]>();
+    for (const field of texts(form)) grouped.set(field.name, [...(grouped.get(field.name) ?? []), field.value ?? ""]);
+    if (grouped.size) {
+      const entries = [...grouped].map(([name, values]) => `${pyString(name)}: ${values.length > 1 ? `[${values.map(pyString).join(", ")}]` : pyString(values[0])}`);
+      lines.push(`data = {${entries.join(", ")}}`);
       args.push("data=data");
     }
     const fileFields = files(form);
@@ -434,12 +438,13 @@ function dart({ method, url, headers, form = [] }: HttpRequest) {
   if (headerList(headers).length) {
     lines.push("  request.headers.addAll({", ...headerList(headers).map(([key, value]) => `    ${dartQuote(key)}: ${dartQuote(value)},`), "  });");
   }
+  // `fields` is a Map, so repeated names go in as filename-less parts instead.
+  const counts = new Map<string, number>();
+  for (const field of texts(form)) counts.set(field.name, (counts.get(field.name) ?? 0) + 1);
   for (const field of form) {
-    lines.push(
-      field.file
-        ? `  request.files.add(await http.MultipartFile.fromPath(${dartQuote(field.name)}, ${dartQuote(path(field))}));`
-        : `  request.fields[${dartQuote(field.name)}] = ${dartQuote(field.value ?? "")};`,
-    );
+    if (field.file) lines.push(`  request.files.add(await http.MultipartFile.fromPath(${dartQuote(field.name)}, ${dartQuote(path(field))}));`);
+    else if (counts.get(field.name)! > 1) lines.push(`  request.files.add(http.MultipartFile.fromString(${dartQuote(field.name)}, ${dartQuote(field.value ?? "")}));`);
+    else lines.push(`  request.fields[${dartQuote(field.name)}] = ${dartQuote(field.value ?? "")};`);
   }
   lines.push("", "  final response = await request.send();", "  print(await response.stream.bytesToString());", "}");
   return lines.join("\n");
@@ -517,9 +522,15 @@ function powershell({ method, url, headers, form = [] }: HttpRequest) {
     lines.push("$headers = @{", ...headerList(headers).map(([key, value]) => `    ${psQuote(key)} = ${psQuote(value)}`), "}");
     args.push("-Headers $headers");
   }
+  // Hash literals reject duplicate keys; -Form sends an array value as repeated parts.
+  const grouped = new Map<string, string[]>();
+  for (const field of form) {
+    const value = field.file ? `(Get-Item -Path ${psQuote(path(field))})` : psQuote(field.value ?? "");
+    grouped.set(field.name, [...(grouped.get(field.name) ?? []), value]);
+  }
   lines.push(
     "$form = @{",
-    ...form.map((field) => `    ${psQuote(field.name)} = ${field.file ? `Get-Item -Path ${psQuote(path(field))}` : psQuote(field.value ?? "")}`),
+    ...[...grouped].map(([name, values]) => `    ${psQuote(name)} = ${values.length > 1 ? `@(${values.join(", ")})` : values[0]}`),
     "}",
     "",
   );

@@ -387,7 +387,7 @@ function kotlinOkHttp({ method, url, headers, body }: HttpRequest) {
     ...(hasBody
       ? [
           `val mediaType = ${kotlinQuote(contentTypeOf(headers) ?? "text/plain")}.toMediaType()`,
-          `val body = """\n${body.replace(/\$/g, "${'$'}")}\n""".trimIndent().toRequestBody(mediaType)`,
+          `val body = """\n${body.replace(/\$/g, () => "${'$'}")}\n""".trimIndent().toRequestBody(mediaType)`,
         ]
       : []),
     "val request = Request.Builder()",
