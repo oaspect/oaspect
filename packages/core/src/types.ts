@@ -37,17 +37,36 @@ export type SchemaChildren =
   | { kind: "oneOf" | "anyOf"; variants: ResolvedSchema[] }
   | null;
 
+export interface LinkInfo {
+  name: string;
+  operationId?: string;
+  operationRef?: string;
+  /** Target parameter name → runtime expression or value. */
+  parameters: Record<string, unknown>;
+  requestBody?: unknown;
+  description: string;
+}
+
 export interface ResponseInfo {
   status: string;
   description: string;
   "x-i18n"?: OpenAPIObject;
   content: Record<string, OpenAPIObject>;
   headers: Record<string, OpenAPIObject>;
+  links: LinkInfo[];
+}
+
+export interface CallbackInfo {
+  name: string;
+  /** Operations keyed by runtime expression ("{$request.body#/callbackUrl}") in `path`. */
+  operations: Operation[];
 }
 
 export interface Operation {
   /** Stable id for links: "operation/<operationId>" or "operation/<method>-<path>". */
   anchor: string;
+  /** "webhook": sent by the API (3.1 webhooks); "callback": nested under an operation. */
+  kind: "operation" | "webhook" | "callback";
   method: HttpMethod;
   path: string;
   summary: string;
@@ -59,6 +78,7 @@ export interface Operation {
   parameters: OpenAPIObject[];
   requestBody: OpenAPIObject | null;
   responses: ResponseInfo[];
+  callbacks: CallbackInfo[];
   security: OpenAPIObject[];
   servers: ServerObject[];
 }
@@ -84,6 +104,8 @@ export interface ApiModel {
   securitySchemes: Record<string, OpenAPIObject>;
   tags: TagGroup[];
   operations: Operation[];
+  /** OpenAPI 3.1 webhooks; `path` holds the webhook name. */
+  webhooks: Operation[];
   schemas: SchemaEntry[];
 }
 

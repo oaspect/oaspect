@@ -4,7 +4,7 @@ export * from "./types";
 export { deref, refName, resolvePointer } from "./refs";
 export { childrenOf, constraintsOf, inferType, resolveSchema, typeLabel } from "./schema";
 export { exampleFromSchema, mediaExample, mediaExamples } from "./example";
-export { HTTP_METHODS, buildModel, modelAnchor, serverUrl, slugify, tagAnchor } from "./model";
+export { HTTP_METHODS, buildModel, linkTarget, modelAnchor, serverUrl, slugify, tagAnchor } from "./model";
 export { buildRequest, defaultBody, defaultForm, defaultValues, formEncode, isMultipart, jsonMediaType, parameterExample } from "./request";
 export type { BuildRequestOptions, DefaultBody } from "./request";
 export { SNIPPET_LANGUAGES, resolveSnippet } from "./snippets";
