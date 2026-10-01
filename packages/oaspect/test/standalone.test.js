@@ -39,6 +39,17 @@ describe("standalone bundle", () => {
     expect(window.Oaspect.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 
+  test("styles go first in <head> so the page's own CSS can override them", async () => {
+    const { window, document } = browser();
+    const host = document.createElement("style");
+    host.textContent = ".oaspect { --oaspect-primary: red; }";
+    document.head.append(host);
+    window.Oaspect.init("#docs", { spec });
+    await wait(10);
+    expect(document.head.firstElementChild.id).toBe("oaspect-styles");
+    expect(document.head.lastElementChild).toBe(host);
+  });
+
   test("init renders an inline spec, update and destroy work", async () => {
     const { window, document, errors } = browser();
     const instance = window.Oaspect.init("#docs", { spec });

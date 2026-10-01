@@ -21,7 +21,9 @@ function injectStyles() {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = css;
-  document.head.append(style);
+  // First in <head>: the page's own stylesheets come later, so its overrides
+  // (.oaspect { --oaspect-primary: … }) win at equal specificity.
+  document.head.prepend(style);
 }
 
 /**
