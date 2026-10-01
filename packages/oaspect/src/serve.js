@@ -59,6 +59,7 @@ export async function serve({ source, port = 8080, host = "127.0.0.1", proxy = t
         res.writeHead(200, { "Content-Type": "text/javascript; charset=utf-8" });
         res.end(await readFile(bundlePath));
       } else if (pathname === "/favicon.ico") {
+        // The page declares an inline icon; answer browsers that still ask.
         res.writeHead(204);
         res.end();
       } else if (proxyHandler && pathname === PROXY_PATH) {
