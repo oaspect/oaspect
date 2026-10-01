@@ -3,6 +3,8 @@
 Interactive API reference for OpenAPI documents — a lightweight alternative to
 Redoc and Scalar.
 
+**[oaspect.dev](https://oaspect.dev)**: guide, reference and live demos.
+
 - Three-column reference: navigation, details, code samples
 - **Try it**: edit parameters and body (including file uploads), send the
   request (directly or through a CORS-free proxy), inspect status, headers and
