@@ -1,0 +1,51 @@
+{
+  "name": "@oaspect/react",
+  "version": "0.1.0",
+  "description": "Interactive API reference for OpenAPI documents, as a React component.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./styles.css"
+  },
+  "files": [
+    "dist",
+    "styles.css"
+  ],
+  "keywords": [
+    "openapi",
+    "swagger",
+    "api-documentation",
+    "api-reference",
+    "react"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/fix-extensions.mjs && cp src/index.d.ts dist/index.d.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@oaspect/core": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

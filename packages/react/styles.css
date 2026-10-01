@@ -1,0 +1,106 @@
+/*
+ * @oaspect/react styles — a Tailwind CSS v4 fragment.
+ *
+ * Import it after Tailwind and let Tailwind scan the package:
+ *
+ *   @import "tailwindcss";
+ *   @import "@oaspect/react/styles.css";
+ *   @source "../node_modules/@oaspect/react/dist";
+ *
+ * Colors are CSS variables on .oaspect (the component root); override them
+ * there to theme the viewer. A prebuilt, prefixed stylesheet that works
+ * without Tailwind is planned.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-background: var(--oaspect-background);
+  --color-foreground: var(--oaspect-foreground);
+  --color-card: var(--oaspect-card);
+  --color-muted: var(--oaspect-muted);
+  --color-border: var(--oaspect-border);
+  --color-primary: var(--oaspect-primary);
+  --color-primary-foreground: var(--oaspect-primary-foreground);
+  --color-muted-foreground: var(--oaspect-muted-foreground);
+  --color-code: var(--oaspect-code);
+  --color-code-foreground: var(--oaspect-code-foreground);
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.oaspect {
+  --oaspect-background: oklch(1 0 0);
+  --oaspect-foreground: oklch(0.141 0.005 285.823);
+  --oaspect-card: oklch(0.985 0 0);
+  --oaspect-muted: oklch(0.967 0.001 286.375);
+  --oaspect-border: oklch(0.92 0.004 286.32);
+  --oaspect-primary: oklch(0.6 0.2 142);
+  --oaspect-primary-foreground: oklch(0.99 0.01 158);
+  --oaspect-muted-foreground: oklch(0.552 0.016 285.938);
+  --oaspect-code: oklch(0.21 0.006 285.885);
+  --oaspect-code-foreground: oklch(0.92 0.004 286.32);
+  --oaspect-syntax-key: oklch(0.8 0.1 250);
+  --oaspect-syntax-string: oklch(0.82 0.13 142);
+  --oaspect-syntax-number: oklch(0.8 0.13 60);
+  --oaspect-syntax-literal: oklch(0.75 0.14 330);
+  --oaspect-syntax-keyword: oklch(0.74 0.16 300);
+  --oaspect-syntax-function: oklch(0.85 0.12 90);
+  --oaspect-syntax-variable: oklch(0.78 0.14 25);
+  --oaspect-syntax-attr: oklch(0.8 0.1 200);
+  --oaspect-syntax-comment: oklch(0.6 0.02 286);
+  --oaspect-syntax-type: oklch(0.8 0.11 170);
+  color-scheme: light;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.oaspect[data-theme="dark"],
+[data-theme="dark"] .oaspect:not([data-theme="light"]) {
+  --oaspect-background: oklch(0.141 0.005 285.823);
+  --oaspect-foreground: oklch(0.985 0 0);
+  --oaspect-card: oklch(0.18 0.006 285.885);
+  --oaspect-muted: oklch(0.21 0.006 285.885);
+  --oaspect-border: oklch(1 0 0 / 12%);
+  --oaspect-primary: oklch(0.72 0.2 142);
+  --oaspect-primary-foreground: oklch(0.141 0.005 285.823);
+  --oaspect-muted-foreground: oklch(0.705 0.015 286.067);
+  --oaspect-code: oklch(0.11 0.004 285.823);
+  --oaspect-code-foreground: oklch(0.92 0.004 286.32);
+  color-scheme: dark;
+}
+
+.oaspect .syntax-key {
+  color: var(--oaspect-syntax-key);
+}
+.oaspect .syntax-string {
+  color: var(--oaspect-syntax-string);
+}
+.oaspect .syntax-number {
+  color: var(--oaspect-syntax-number);
+}
+.oaspect .syntax-literal,
+.oaspect .syntax-constant {
+  color: var(--oaspect-syntax-literal);
+}
+.oaspect .syntax-keyword {
+  color: var(--oaspect-syntax-keyword);
+}
+.oaspect .syntax-function {
+  color: var(--oaspect-syntax-function);
+}
+.oaspect .syntax-variable {
+  color: var(--oaspect-syntax-variable);
+}
+.oaspect .syntax-attr {
+  color: var(--oaspect-syntax-attr);
+}
+.oaspect .syntax-type {
+  color: var(--oaspect-syntax-type);
+}
+.oaspect .syntax-comment {
+  color: var(--oaspect-syntax-comment);
+  font-style: italic;
+}
