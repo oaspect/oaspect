@@ -29,9 +29,10 @@
   --oaspect-card: oklch(0.985 0 0);
   --oaspect-muted: oklch(0.967 0.001 286.375);
   --oaspect-border: oklch(0.92 0.004 286.32);
-  --oaspect-primary: oklch(0.6 0.2 142);
+  /* Light-theme text colors keep WCAG AA contrast (4.5:1) on white and muted backgrounds. */
+  --oaspect-primary: oklch(0.48 0.16 142);
   --oaspect-primary-foreground: oklch(0.99 0.01 158);
-  --oaspect-muted-foreground: oklch(0.552 0.016 285.938);
+  --oaspect-muted-foreground: oklch(0.5 0.016 285.938);
   --oaspect-code: oklch(0.21 0.006 285.885);
   --oaspect-code-foreground: oklch(0.92 0.004 286.32);
   --oaspect-syntax-key: oklch(0.8 0.1 250);
@@ -117,4 +118,19 @@
 
 :where(em) {
   font-style: italic;
+}
+
+/*
+ * Keyboard focus: a visible ring on everything focusable, including controls
+ * that drop their outline for mouse users (outline-none) and the invisible
+ * <select> layered over the language button.
+ */
+:focus-visible {
+  outline: 2px solid var(--oaspect-primary);
+  outline-offset: 2px;
+}
+
+label:has(> select.opacity-0:focus-visible) {
+  outline: 2px solid var(--oaspect-primary);
+  outline-offset: 2px;
 }

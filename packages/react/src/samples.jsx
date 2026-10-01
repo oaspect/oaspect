@@ -118,7 +118,7 @@ export function ResponseSample({ operation }) {
               setExampleKey(null);
             }}
           >
-            <span className={item.status === response.status ? "" : statusTone(item.status)}>{item.status}</span>
+            <span className={item.status === response.status ? "" : statusTone(item.status, { onDark: true })}>{item.status}</span>
           </ToolbarTab>
         ))}
       />

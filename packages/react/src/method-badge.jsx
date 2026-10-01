@@ -1,9 +1,9 @@
 const METHOD_STYLES = {
-  get: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
-  post: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-  put: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  patch: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
-  delete: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+  get: "bg-sky-500/15 text-sky-800 dark:text-sky-300",
+  post: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300",
+  put: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
+  patch: "bg-violet-500/15 text-violet-800 dark:text-violet-300",
+  delete: "bg-rose-500/15 text-rose-800 dark:text-rose-300",
 };
 
 export default function MethodBadge({ method, size = "md" }) {
@@ -20,10 +20,19 @@ export default function MethodBadge({ method, size = "md" }) {
   );
 }
 
-export function statusTone(status) {
-  if (/^2/.test(status)) return "text-emerald-600 dark:text-emerald-400";
-  if (/^3/.test(status)) return "text-sky-600 dark:text-sky-400";
-  if (/^4/.test(status)) return "text-amber-600 dark:text-amber-400";
-  if (/^5/.test(status)) return "text-rose-600 dark:text-rose-400";
+// Status code colors. `onDark` is for the always-dark code blocks, where the
+// light-theme shades would not reach WCAG AA contrast.
+export function statusTone(status, { onDark = false } = {}) {
+  if (onDark) {
+    if (/^2/.test(status)) return "text-emerald-400";
+    if (/^3/.test(status)) return "text-sky-400";
+    if (/^4/.test(status)) return "text-amber-400";
+    if (/^5/.test(status)) return "text-rose-400";
+    return "text-white/60";
+  }
+  if (/^2/.test(status)) return "text-emerald-700 dark:text-emerald-400";
+  if (/^3/.test(status)) return "text-sky-700 dark:text-sky-400";
+  if (/^4/.test(status)) return "text-amber-700 dark:text-amber-400";
+  if (/^5/.test(status)) return "text-rose-700 dark:text-rose-400";
   return "text-muted-foreground";
 }

@@ -197,6 +197,11 @@ function Viewer({
   const storage = useMemo(() => createStorage(storagePrefix), [storagePrefix]);
   const rootRef = useRef(null);
   const locale = useLocale();
+  const [nestedInMain, setNestedInMain] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the host DOM once
+    setNestedInMain(Boolean(rootRef.current?.parentElement?.closest("main, [role=main]")));
+  }, []);
 
   const [source, setSource] = useState({ type: "pending" });
   // Inline documents are normalized too (Swagger 2.0 → OpenAPI 3).
@@ -415,6 +420,12 @@ function Viewer({
         <div ref={rootRef} className="oaspect" data-theme={theme ?? undefined} dir={directionOf(locale)} lang={locale}>
         <div className="min-h-dvh bg-background text-foreground">
           <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur">
+            <a
+              href="#oaspect-content"
+              className="absolute start-2 top-2 z-50 -translate-y-20 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground focus:translate-y-0"
+            >
+              {t("header.skip")}
+            </a>
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -475,7 +486,8 @@ function Viewer({
               )}
 
               <LazyContext.Provider value={lazyEnabled}>
-              <main className="min-w-0 flex-1 px-4 sm:px-8 xl:px-12">
+              {/* role="main" unless the host page already has a main landmark around us. */}
+              <div id="oaspect-content" tabIndex={-1} role={nestedInMain ? "region" : "main"} aria-label={nestedInMain ? heading : undefined} className="min-w-0 flex-1 px-4 outline-none sm:px-8 xl:px-12">
                 <div className="mx-auto max-w-[88rem]">
                   <Intro spec={spec} model={model} />
                   {model.tags.map((tag) => (
@@ -503,7 +515,7 @@ function Viewer({
                   )}
                   {features.models && <Models schemas={model.schemas} />}
                 </div>
-              </main>
+              </div>
               </LazyContext.Provider>
             </div>
           )}

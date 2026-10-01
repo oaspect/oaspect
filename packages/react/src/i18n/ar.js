@@ -20,6 +20,7 @@ const messages = {
   "dialog.close": "إغلاق",
   "header.language": "تغيير اللغة",
   "header.menu": "القائمة",
+  "header.skip": "انتقل إلى المحتوى",
   "header.theme": "تبديل السمة",
   "intro.download": "تنزيل مستند OpenAPI",
   "intro.endpoints": "نقاط النهاية",

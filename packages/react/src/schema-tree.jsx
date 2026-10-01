@@ -38,7 +38,7 @@ export function FieldDetails({ schema, name, description, required, deprecated, 
           typeLabel(spec, schema, name)
         )}
       </span>
-      {required && <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">required</span>}
+      {required && <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400">required</span>}
       {schema.nullable && <Chip>nullable</Chip>}
       {schema.readOnly && <Chip>read-only</Chip>}
       {schema.writeOnly && <Chip>write-only</Chip>}

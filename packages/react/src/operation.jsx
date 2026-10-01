@@ -310,7 +310,7 @@ function Operation({ operation, onTry, eager = false }) {
               <SectionTitle
                 aside={
                   operation.requestBody.required && (
-                    <span className="text-[11px] font-medium text-rose-600 dark:text-rose-400">required</span>
+                    <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400">required</span>
                   )
                 }
               >

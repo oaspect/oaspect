@@ -20,6 +20,7 @@ const messages = {
   "dialog.close": "Kapat",
   "header.language": "Dil değiştir",
   "header.menu": "Menü",
+  "header.skip": "İçeriğe geç",
   "header.theme": "Temayı değiştir",
   "intro.download": "OpenAPI dokümanını indir",
   "intro.endpoints": "Endpoint",

@@ -82,7 +82,7 @@ function TokenRequest({ name, scheme, credential }) {
       >
         {state.status === "loading" ? t("auth.gettingToken") : t("auth.getToken")}
       </button>
-      {state.status === "error" && <p className="text-xs text-rose-600 dark:text-rose-400">{t("auth.tokenFailed", { error: state.message })}</p>}
+      {state.status === "error" && <p className="text-xs text-rose-700 dark:text-rose-400">{t("auth.tokenFailed", { error: state.message })}</p>}
     </div>
   );
 }
