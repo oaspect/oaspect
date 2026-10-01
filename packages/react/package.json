@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "Interactive API reference for OpenAPI documents, as a React component.",
   "license": "MIT",
+  "homepage": "https://oaspect.github.io/oaspect/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oaspect/oaspect.git",
+    "directory": "packages/react"
+  },
+  "bugs": "https://github.com/oaspect/oaspect/issues",
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -52,5 +59,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

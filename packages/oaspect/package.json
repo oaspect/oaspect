@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "Interactive API reference for OpenAPI documents: one script tag, a web component, a CLI and server helpers.",
   "license": "MIT",
+  "homepage": "https://oaspect.github.io/oaspect/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oaspect/oaspect.git",
+    "directory": "packages/oaspect"
+  },
+  "bugs": "https://github.com/oaspect/oaspect/issues",
   "type": "module",
   "main": "./dist/oaspect.js",
   "browser": "./dist/oaspect.js",
@@ -56,5 +63,8 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "vitest": "^3.2.7"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
