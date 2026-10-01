@@ -4,12 +4,13 @@ Interactive API reference for OpenAPI documents — a lightweight alternative to
 Redoc and Scalar.
 
 - Three-column reference: navigation, details, code samples
-- **Try it**: edit parameters and body, send the request (directly or through a
-  CORS-free proxy), inspect status, headers and body; write requests ask for
-  confirmation first
+- **Try it**: edit parameters and body (including file uploads), send the
+  request (directly or through a CORS-free proxy), inspect status, headers and
+  body; write requests ask for confirmation first
 - **Code samples** in 16 languages / 30 clients (cURL, fetch, Axios, Python
   requests/httpx, PHP Guzzle, Go, Java, Kotlin, C#, Ruby, Swift, Dart, Rust,
-  C, PowerShell, raw HTTP), with syntax highlighting
+  C, PowerShell, raw HTTP), with syntax highlighting; `multipart/form-data`
+  bodies use each client's own multipart API
 - **OpenAPI 3.0 / 3.1 and Swagger 2.0**, JSON or YAML
 - Schema trees with `$ref`, `allOf`, `oneOf`/`anyOf`, arrays, maps, cycles
 - Markdown descriptions (GFM subset: tables, lists, code blocks…), raw HTML
@@ -147,11 +148,12 @@ Türkçe metin
 
 ## Known limitations
 
-- `multipart/form-data` request bodies are documented, but code samples and
-  "Try" send them as text; file uploads cannot be tried yet.
 - External `$ref`s (other files or URLs) are not resolved.
 - Security schemes are converted and shown in the document, but "Try" only
   offers a Bearer token.
+- A few clients have no multipart encoder (wget, node:http, Python
+  http.client, java.net.http); their samples point to another client of the
+  same language. PHP cURL arrays cannot repeat a field name.
 
 ## Development
 
