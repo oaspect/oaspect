@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
-import { jsonMediaType, linkTarget, mediaExample, resolveSchema } from "@oaspect/core";
+import { jsonMediaType, linkTarget, mediaExample, resolveSchema, securityRequirements } from "@oaspect/core";
 import CodeBlock, { CopyButton } from "./code-block";
 import { useLocalized, useT } from "./i18n/context";
 import Markdown from "./markdown";
@@ -9,7 +9,7 @@ import MethodBadge, { statusTone } from "./method-badge";
 import { RequestSample, ResponseSample } from "./samples";
 import SchemaTree, { FieldDetails } from "./schema-tree";
 import { useModel, useSpec } from "./spec-context";
-import { ChevronIcon } from "./icons";
+import { ChevronIcon, LockIcon } from "./icons";
 
 // Titles are translation keys.
 const PARAM_GROUPS = [
@@ -232,6 +232,31 @@ function PayloadSample({ operation }) {
   );
 }
 
+// "Requires: a or b + c" from the operation's security requirements.
+function SecurityLine({ operation }) {
+  const t = useT();
+  const requirements = securityRequirements(operation);
+  if (!requirements.length) return null;
+  const optional = requirements.some((requirement) => requirement.schemes.length === 0);
+  const alternatives = requirements.filter((requirement) => requirement.schemes.length);
+
+  return (
+    <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+      <LockIcon className="size-3.5" />
+      <span>{t("operation.security")}</span>
+      {alternatives.map((requirement, index) => (
+        <span key={index} className="flex items-center gap-1.5">
+          {index > 0 && <span>{t("operation.securityOr")}</span>}
+          <code dir="ltr" className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
+            {requirement.schemes.map((name) => (requirement.scopes[name]?.length ? `${name} (${requirement.scopes[name].join(", ")})` : name)).join(" + ")}
+          </code>
+        </span>
+      ))}
+      {optional && <span>({t("operation.securityOptional")})</span>}
+    </p>
+  );
+}
+
 function Operation({ operation, onTry }) {
   const t = useT();
   const localized = useLocalized();
@@ -258,6 +283,7 @@ function Operation({ operation, onTry }) {
           {operation.operationId && (
             <p dir="ltr" className="mt-2 text-start font-mono text-[11px] text-muted-foreground [unicode-bidi:plaintext]">operationId: {operation.operationId}</p>
           )}
+          <SecurityLine operation={operation} />
           <Markdown source={localized(operation, "description")} className="mt-4" />
 
           <Parameters parameters={operation.parameters} />

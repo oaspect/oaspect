@@ -5,6 +5,8 @@ import { useT } from "./i18n/context";
 import { buildRequest, defaultBody, defaultValues, isMultipart } from "@oaspect/core";
 import CodeBlock, { CodeEditor } from "./code-block";
 import MethodBadge, { statusTone } from "./method-badge";
+import { withAuth } from "./samples";
+import { sendDirect, sendViaProxy } from "./send";
 import { useSettings, useSpec } from "./spec-context";
 import { CloseIcon } from "./icons";
 
@@ -21,64 +23,6 @@ const LOCATIONS = [
   ["cookie", "Cookie"],
 ];
 
-// FormData for multipart requests: text parts plus the chosen File objects
-// (aligned with request.form).
-function toFormData(form, files) {
-  const data = new FormData();
-  form.forEach((field, index) => {
-    if (field.file) data.append(field.name, files[index], field.file.name);
-    else data.append(field.name, field.value ?? "");
-  });
-  return data;
-}
-
-async function toBase64(file) {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let binary = "";
-  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
-  }
-  return btoa(binary);
-}
-
-// Sends the request straight from the browser (needs CORS on the API).
-async function sendDirect(request, files) {
-  const started = performance.now();
-  const response = await fetch(request.url, {
-    method: request.method,
-    headers: request.headers,
-    body: request.form ? toFormData(request.form, files) : request.body,
-  });
-  return {
-    status: response.status,
-    statusText: response.statusText,
-    duration: Math.round(performance.now() - started),
-    headers: [...response.headers.entries()],
-    body: await response.text(),
-  };
-}
-
-// Relays the request through the host's proxy endpoint (see proxyUrl).
-// Multipart files travel base64-encoded inside the JSON payload.
-async function sendViaProxy(proxyUrl, request, files) {
-  const payload = { ...request };
-  if (request.form) {
-    payload.form = await Promise.all(
-      request.form.map(async (field, index) =>
-        field.file ? { name: field.name, file: { ...field.file, data: await toBase64(files[index]) } } : field,
-      ),
-    );
-  }
-  const response = await fetch(proxyUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const result = await response.json();
-  if (result.error) throw new Error(result.error);
-  return result;
-}
-
 function prettyBody(text) {
   try {
     return { code: JSON.stringify(JSON.parse(text), null, 2), language: "json" };
@@ -90,7 +34,7 @@ function prettyBody(text) {
 // Modal request runner: edit parameters/body and send the request from the browser.
 export default function TryIt({ operation, onClose }) {
   const spec = useSpec();
-  const { server, authHeaders, proxyUrl, storage } = useSettings();
+  const { server, authFor, proxyUrl, storage } = useSettings();
   const proxyEnabled = Boolean(proxyUrl);
   const dialog = useRef(null);
   const t = useT();
@@ -123,7 +67,7 @@ export default function TryIt({ operation, onClose }) {
     .map((field, index) => ({ field, file: chosen[index] }))
     .filter(({ field, file }) => !field.file || file)
     .map(({ field, file }) => ({ field: file ? { name: field.name, file: { name: file.name, type: file.type || undefined } } : field, file }));
-  const request = buildRequest(operation, { server, values, body, form: sent.map((item) => item.field), contentType, headers: authHeaders });
+  const request = buildRequest(operation, { server, ...withAuth(values, authFor(operation)), body, form: sent.map((item) => item.field), contentType });
   const files = sent.map((item) => item.file ?? null);
 
   function setFormValue(index, value) {

@@ -27,20 +27,27 @@ function ToolbarSelect({ label, value, options, onChange }) {
   );
 }
 
+// Merges security parts (API keys in query/cookie, auth headers) into a request's values.
+export function withAuth(values, auth) {
+  return {
+    values: { ...values, query: { ...values.query, ...auth.query }, cookie: { ...values.cookie, ...auth.cookies } },
+    headers: auth.headers,
+  };
+}
+
 export function RequestSample({ operation, onTry }) {
   const spec = useSpec();
-  const { server, authHeaders, language, setLanguage } = useSettings();
+  const { server, authFor, language, setLanguage } = useSettings();
   const t = useT();
 
   const request = useMemo(
     () =>
       buildRequest(operation, {
         server,
-        values: defaultValues(spec, operation),
+        ...withAuth(defaultValues(spec, operation), authFor(operation)),
         ...defaultBody(spec, operation),
-        headers: authHeaders,
       }),
-    [spec, operation, server, authHeaders],
+    [spec, operation, server, authFor],
   );
 
   const { language: current, client } = resolveSnippet(language);

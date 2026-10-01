@@ -3,6 +3,7 @@
 import { useLocalized, useT } from "./i18n/context";
 import Markdown from "./markdown";
 import { useSettings } from "./spec-context";
+import AuthPanel from "./auth-panel";
 
 function downloadSpec(spec) {
   const blob = new Blob([JSON.stringify(spec, null, 2)], { type: "application/json" });
@@ -14,7 +15,8 @@ function downloadSpec(spec) {
 }
 
 export default function Intro({ spec, model }) {
-  const { servers, serverIndex, setServerIndex, customServer, setCustomServer, token, setToken, selectedServer, variableValues, setVariable } = useSettings();
+  const { servers, serverIndex, setServerIndex, customServer, setCustomServer, token, setToken, selectedServer, variableValues, setVariable, securitySchemes } = useSettings();
+  const hasSchemes = Object.keys(securitySchemes ?? {}).length > 0;
   const variables = Object.entries(selectedServer?.variables ?? {});
   const { info } = model;
   const t = useT();
@@ -123,6 +125,9 @@ export default function Intro({ spec, model }) {
               className="w-full rounded-lg border border-border bg-background px-2 py-1.5 font-mono text-xs outline-none focus:border-primary"
             />
           )}
+          {hasSchemes ? (
+            <AuthPanel schemes={securitySchemes} />
+          ) : (
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">Bearer token</span>
             <input
@@ -134,6 +139,7 @@ export default function Intro({ spec, model }) {
               className="w-full rounded-lg border border-border bg-background px-2 py-1.5 font-mono text-xs outline-none focus:border-primary"
             />
           </label>
+          )}
           <p className="text-xs text-muted-foreground">
             {t("connection.tokenNote")}
           </p>

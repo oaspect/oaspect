@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buildModel, loadSpecText, normalizeSpec, serverUrl } from "@oaspect/core";
+import { applySecurity, buildModel, loadSpecText, normalizeSpec, securityRequirements, serverUrl } from "@oaspect/core";
 import { LocaleProvider, useAvailableLocales, useLocale, useLocalized, useSetLocale, useT } from "./i18n/context";
 import { LOCALE_NAMES, directionOf, mergeMessages } from "./i18n/index";
 import { createStorage } from "./storage";
@@ -205,6 +205,8 @@ function Viewer({
   // Server variable values per server index: { 0: { region: "us" } }.
   const [serverVariables, setServerVariables] = useState({});
   const [token, setToken] = useState("");
+  // Credentials per security scheme name (components.securitySchemes).
+  const [credentials, setCredentials] = useState({});
   const [language, setLanguage] = useState(defaultSnippet);
   // null until mounted: the host's own data-theme (if any) applies meanwhile,
   // so a server-rendered page does not flash the wrong theme.
@@ -214,6 +216,11 @@ function Viewer({
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- one-time sync from browser-only state */
     setToken(storage.get("token", ""));
+    try {
+      setCredentials(JSON.parse(storage.get("credentials", "{}")) ?? {});
+    } catch {
+      // Ignore unreadable stored credentials.
+    }
     setLanguage(storage.get("language", defaultSnippet));
     if (!themeProp) setTheme(storage.get("theme") ?? document.documentElement.dataset.theme ?? systemTheme());
     const url = urlParam ? new URLSearchParams(window.location.search).get(urlParam) : null;
@@ -222,6 +229,7 @@ function Viewer({
   }, [storage, defaultSnippet, urlParam, themeProp]);
 
   useEffect(() => storage.set("token", token), [storage, token]);
+  useEffect(() => storage.set("credentials", Object.keys(credentials).length ? JSON.stringify(credentials) : null), [storage, credentials]);
   useEffect(() => storage.set("language", language), [storage, language]);
 
   function changeTheme(next) {
@@ -297,6 +305,8 @@ function Viewer({
     setServerIndex(0);
   }, [model]);
 
+  const schemes = useMemo(() => model?.securitySchemes ?? {}, [model]);
+
   const settings = useMemo(() => {
     const servers = model?.servers ?? [];
     const selected = serverIndex === -1 ? { url: customServer } : servers[serverIndex] ?? servers[0];
@@ -316,7 +326,15 @@ function Viewer({
       setCustomServer,
       token,
       setToken,
-      authHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials,
+      setCredential: (name, patch) => setCredentials((current) => ({ ...current, [name]: { ...current[name], ...patch } })),
+      securitySchemes: schemes,
+      // Headers, query parameters and cookies an operation needs. Without
+      // securitySchemes in the document, the generic Bearer token applies.
+      authFor: (operation) =>
+        Object.keys(schemes).length
+          ? applySecurity(schemes, securityRequirements(operation), credentials)
+          : { headers: token ? { Authorization: `Bearer ${token}` } : {}, query: {}, cookies: {} },
       language,
       setLanguage,
       proxyUrl,
@@ -325,7 +343,7 @@ function Viewer({
     };
     // features is rebuilt each render from props; its fields are what matter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, serverIndex, customServer, serverVariables, token, language, proxyUrl, storage, features.tryIt]);
+  }, [model, schemes, serverIndex, customServer, serverVariables, token, credentials, language, proxyUrl, storage, features.tryIt]);
 
   // Scroll spy: the section crossing the band under the header is active.
   useEffect(() => {
