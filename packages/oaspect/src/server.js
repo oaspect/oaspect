@@ -118,3 +118,51 @@ export function createProxyHandler({ allowedHosts, timeoutMs = 30_000, rewriteHo
     }
   };
 }
+
+/**
+ * Creates a GET handler serving the OpenAPI document for the viewer's
+ * `specUrl`. With `url`, the live document is fetched server-side (no CORS
+ * needed on the API) and cached for `cacheSeconds`; when it cannot be
+ * reached, `fallback` is served and the response carries
+ * `x-oaspect-spec-source: fallback` so the viewer shows an out-of-date notice.
+ *
+ * @param {{
+ *   url?: string,
+ *   fallback?: string | (() => string | Promise<string>),
+ *   cacheSeconds?: number,
+ *   timeoutMs?: number,
+ *   rewriteHost?: (url: URL) => URL,
+ * }} options
+ * @returns {(request?: Request) => Promise<Response>}
+ */
+export function createSpecHandler({ url, fallback, cacheSeconds = 60, timeoutMs = 10_000, rewriteHost } = {}) {
+  if (!url && fallback === undefined) throw new Error("createSpecHandler: pass url, fallback or both");
+  let cached = null;
+
+  const respond = (text, source, contentType) =>
+    new Response(text, {
+      headers: {
+        "Content-Type": contentType ?? (text.trimStart().startsWith("{") ? "application/json; charset=utf-8" : "application/yaml; charset=utf-8"),
+        "Cache-Control": `public, max-age=${cacheSeconds}`,
+        "x-oaspect-spec-source": source,
+      },
+    });
+
+  return async function spec() {
+    if (url) {
+      if (cached && Date.now() - cached.at < cacheSeconds * 1000) return respond(cached.text, "remote", cached.type);
+      try {
+        const target = rewriteHost ? rewriteHost(new URL(url)) : url;
+        const response = await fetch(target, { signal: AbortSignal.timeout(timeoutMs) });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        cached = { text, type: response.headers.get("content-type") ?? undefined, at: Date.now() };
+        return respond(text, "remote", cached.type);
+      } catch (error) {
+        if (fallback === undefined) return json({ error: `Could not load ${url}: ${error.message}` }, 502);
+      }
+    }
+    const text = typeof fallback === "function" ? await fallback() : fallback;
+    return respond(text, url ? "fallback" : "static");
+  };
+}

@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
-import { createProxyHandler } from "../src/server.js";
+import { createProxyHandler, createSpecHandler } from "../src/server.js";
 
 let upstream;
 let origin;
@@ -82,5 +82,41 @@ describe("createProxyHandler", () => {
 
   test("reports unreachable targets as 502", async () => {
     expect((await call(createProxyHandler({ allowedHosts: "*" }), { url: "http://127.0.0.1:9/x" })).status).toBe(502);
+  });
+});
+
+describe("createSpecHandler", () => {
+  test("serves the live document, caches it, and falls back when it fails", async () => {
+    let calls = 0;
+    const live = createServer((req, res) => {
+      calls += 1;
+      if (req.url === "/broken") {
+        res.statusCode = 500;
+        return res.end();
+      }
+      res.setHeader("content-type", "application/json");
+      res.end('{"openapi":"3.0.0","paths":{}}');
+    });
+    await new Promise((resolve) => live.listen(0, "127.0.0.1", resolve));
+    const base = `http://127.0.0.1:${live.address().port}`;
+    try {
+      const handler = createSpecHandler({ url: `${base}/openapi.json`, fallback: "openapi: 3.0.0" });
+      const first = await handler();
+      expect(first.headers.get("x-oaspect-spec-source")).toBe("remote");
+      expect(await first.json()).toEqual({ openapi: "3.0.0", paths: {} });
+      await handler();
+      expect(calls).toBe(1);
+
+      const broken = await createSpecHandler({ url: `${base}/broken`, fallback: () => "openapi: 3.0.0" })();
+      expect(broken.headers.get("x-oaspect-spec-source")).toBe("fallback");
+      expect(broken.headers.get("content-type")).toMatch(/yaml/);
+      expect(await broken.text()).toBe("openapi: 3.0.0");
+
+      expect((await createSpecHandler({ url: `${base}/broken` })()).status).toBe(502);
+      expect((await createSpecHandler({ fallback: "{}" })()).headers.get("x-oaspect-spec-source")).toBe("static");
+      expect(() => createSpecHandler({})).toThrow(/url, fallback/);
+    } finally {
+      live.close();
+    }
   });
 });
