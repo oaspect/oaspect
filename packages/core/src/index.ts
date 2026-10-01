@@ -11,5 +11,7 @@ export { SNIPPET_LANGUAGES, resolveSnippet } from "./snippets";
 export { localize } from "./i18n";
 export { parseBlocks, parseInline, parseMarkdown, safeUrl, selectLocale } from "./markdown";
 export { tokenize } from "./highlight";
+export { TOKEN_FLOWS, applySecurity, buildTokenRequest, describeScheme, hasCredential, securityRequirements } from "./security";
+export type { AuthParts, Credential, Credentials, SecurityRequirement } from "./security";
 export { convertSchema, convertSwagger2 } from "./convert";
 export { isOpenApiDocument, loadSpecText, normalizeSpec, parseSpec } from "./parse";
