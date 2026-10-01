@@ -1,0 +1,7 @@
+{"openapi":"3.1.0","info":{"title":"Events API","version":"1.0.0"},
+"servers":[{"url":"https://{region}.example.com/{version}","variables":{"region":{"default":"eu","enum":["eu","us"]},"version":{"default":"v1"}}}],
+"paths":{"/subscriptions":{"post":{"operationId":"subscribe","summary":"Subscribe","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"callbackUrl":{"type":"string","format":"uri"}}}}}},
+"callbacks":{"onEvent":{"{$request.body#/callbackUrl}":{"post":{"summary":"Event delivery","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"event":{"type":"string"}}}}}},"responses":{"200":{"description":"Ack"}}}}}},
+"responses":{"201":{"description":"Created","content":{"application/json":{"schema":{"type":"object","properties":{"id":{"type":"string"}}}}},"links":{"GetSubscription":{"operationId":"getSubscription","parameters":{"id":"$response.body#/id"},"description":"Read the subscription back."}}}}}},
+"/subscriptions/{id}":{"get":{"operationId":"getSubscription","summary":"Get subscription","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}}],"responses":{"200":{"description":"OK"}}}}},
+"webhooks":{"newPet":{"post":{"summary":"New pet","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"id":{"type":"integer","example":7},"name":{"type":"string","example":"Rex"}}}}}},"responses":{"200":{"description":"Received"}}}}}}

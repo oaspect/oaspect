@@ -1,0 +1,143 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Bookstore API",
+    "version": "1.0.0",
+    "description": ":::lang en\nA small bookstore used as a test fixture.\n:::\n\n:::lang tr\nTest için kullanılan küçük bir kitapçı.\n:::"
+  },
+  "servers": [{ "url": "https://api.example.com/v1" }],
+  "tags": [
+    { "name": "Books", "x-i18n": { "tr": { "name": "Kitaplar" } } },
+    { "name": "Authors" }
+  ],
+  "paths": {
+    "/books": {
+      "get": {
+        "tags": ["Books"],
+        "summary": "List books",
+        "operationId": "books_list",
+        "parameters": [
+          { "$ref": "#/components/parameters/Page" },
+          { "name": "genre", "in": "query", "schema": { "type": "string", "enum": ["fiction", "science", "history"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BookList" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Books"],
+        "summary": "Create book",
+        "operationId": "books_store",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BookInput" } } }
+        },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Book" } } } },
+          "400": { "$ref": "#/components/responses/Invalid" }
+        }
+      }
+    },
+    "/books/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "get": {
+        "tags": ["Books"],
+        "summary": "Get book",
+        "operationId": "books_show",
+        "responses": {
+          "200": { "description": "Book", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Book" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Books"],
+        "summary": "Update book",
+        "operationId": "books_update",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BookInput" } } } },
+        "responses": { "200": { "description": "Updated" } }
+      },
+      "delete": {
+        "tags": ["Books"],
+        "summary": "Delete book",
+        "operationId": "books_destroy",
+        "responses": { "204": { "description": "Deleted" } }
+      }
+    },
+    "/authors/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/Id" }],
+      "get": {
+        "tags": ["Authors"],
+        "summary": "Get author",
+        "responses": { "200": { "description": "Author", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Author" } } } } }
+      }
+    },
+    "/health": {
+      "get": { "summary": "Health check", "responses": { "204": { "description": "Healthy" } } }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Id": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer", "example": 42 } },
+      "Page": { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "default": 1 } }
+    },
+    "responses": {
+      "NotFound": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Invalid": { "description": "Invalid input", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Timestamps": {
+        "type": "object",
+        "properties": { "created_at": { "type": "string", "format": "date-time" } }
+      },
+      "Author": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "mentor": { "$ref": "#/components/schemas/Author" }
+        }
+      },
+      "BookInput": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "genre": { "type": "string", "enum": ["fiction", "science", "history"] },
+          "price": { "type": "string", "pattern": "^\\d+\\.\\d{2}$", "example": "12.50" }
+        }
+      },
+      "Book": {
+        "allOf": [
+          { "$ref": "#/components/schemas/BookInput" },
+          { "$ref": "#/components/schemas/Timestamps" },
+          {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "integer" },
+              "author": { "allOf": [{ "$ref": "#/components/schemas/Author" }], "nullable": true },
+              "format": { "oneOf": [{ "$ref": "#/components/schemas/Ebook" }, { "$ref": "#/components/schemas/Paperback" }] }
+            }
+          }
+        ]
+      },
+      "Ebook": { "type": "object", "properties": { "size_mb": { "type": "number" } } },
+      "Paperback": { "type": "object", "properties": { "pages": { "type": "integer" } } },
+      "BookList": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Book" } },
+          "meta": { "type": "object", "properties": { "total": { "type": "integer" } } }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "errors": { "type": "array", "items": { "type": "object", "properties": { "title": { "type": "string" } } } } }
+      }
+    }
+  }
+}
