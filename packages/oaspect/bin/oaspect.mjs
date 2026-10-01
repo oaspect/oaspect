@@ -17,7 +17,7 @@ Usage:
   oaspect build <spec> [-o docs.html] [options]   Write a self-contained HTML file
   oaspect serve <spec> [--port 8080] [options]    Live preview with a "Try" proxy
 
-<spec> is a JSON file path or an http(s) URL.
+<spec> is a JSON or YAML file path or an http(s) URL (OpenAPI 3.x or Swagger 2.0).
 
 Options:
   -o, --output <file>       build: output file (default: <spec name>.html)

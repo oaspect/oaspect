@@ -7,7 +7,7 @@ const SRC = new URL("../src/", import.meta.url).pathname;
 
 // Every t("…") id used in the components, plus ids passed indirectly.
 function usedKeys() {
-  const keys = new Set(["params.path", "params.query", "params.header", "params.cookie", "spec.invalid", "spec.invalidJson"]);
+  const keys = new Set(["params.path", "params.query", "params.header", "params.cookie", "spec.unreadableFile"]);
   (function walk(dir) {
     for (const entry of readdirSync(dir)) {
       const path = join(dir, entry);

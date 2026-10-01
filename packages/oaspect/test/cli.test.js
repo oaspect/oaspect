@@ -69,3 +69,14 @@ describe("oaspect serve", () => {
     expect(JSON.parse(result.body).info.title).toBe("Bookstore API");
   });
 });
+
+describe("YAML and Swagger 2.0 input", () => {
+  test("build converts a Swagger 2.0 YAML file", () => {
+    const out = join(mkdtempSync(join(tmpdir(), "oaspect-cli-")), "pets.html");
+    run("build", new URL("./petstore-swagger2.yaml", import.meta.url).pathname, "-o", out);
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('"openapi":"3.0.3"');
+    expect(html).toContain("#/components/schemas/Pet");
+    expect(html).not.toContain('"swagger":"2.0"');
+  });
+});

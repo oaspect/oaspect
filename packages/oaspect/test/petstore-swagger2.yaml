@@ -1,0 +1,114 @@
+swagger: "2.0"
+info:
+  title: Petstore (Swagger 2.0)
+  version: "1.0.0"
+host: petstore.example.com
+basePath: /v2
+schemes: [https, http]
+consumes: [application/json]
+produces: [application/json]
+tags:
+  - name: pets
+securityDefinitions:
+  api_key: { type: apiKey, name: api_key, in: header }
+  basic: { type: basic }
+  petstore_auth:
+    type: oauth2
+    flow: implicit
+    authorizationUrl: https://petstore.example.com/oauth/authorize
+    scopes: { "write:pets": modify pets, "read:pets": read pets }
+parameters:
+  limit: { name: limit, in: query, type: integer, format: int32, minimum: 1, default: 20 }
+  petBody:
+    name: body
+    in: body
+    required: true
+    schema: { $ref: "#/definitions/Pet" }
+responses:
+  NotFound:
+    description: Not found
+    schema: { $ref: "#/definitions/Error" }
+paths:
+  /pets:
+    get:
+      tags: [pets]
+      summary: List pets
+      operationId: listPets
+      parameters:
+        - $ref: "#/parameters/limit"
+        - name: tags
+          in: query
+          type: array
+          items: { type: string }
+          collectionFormat: multi
+          x-example: [cat]
+      responses:
+        "200":
+          description: Pets
+          headers:
+            X-Total: { type: integer, description: Total count }
+          schema:
+            type: array
+            items: { $ref: "#/definitions/Pet" }
+          examples:
+            application/json: [{ id: 1, name: Rex }]
+    post:
+      tags: [pets]
+      summary: Create pet
+      operationId: createPet
+      security: [{ petstore_auth: ["write:pets"] }]
+      parameters:
+        - $ref: "#/parameters/petBody"
+      responses:
+        "201": { description: Created, schema: { $ref: "#/definitions/Pet" } }
+  /pets/{petId}:
+    parameters:
+      - { name: petId, in: path, required: true, type: integer, format: int64 }
+    get:
+      tags: [pets]
+      summary: Get pet
+      operationId: getPet
+      responses:
+        "200": { description: Pet, schema: { $ref: "#/definitions/Pet" } }
+        "404": { $ref: "#/responses/NotFound" }
+    put:
+      tags: [pets]
+      summary: Update pet
+      operationId: updatePet
+      parameters:
+        - in: body
+          name: pet
+          schema: { $ref: "#/definitions/Pet" }
+      responses:
+        "200": { description: Updated }
+  /pets/{petId}/photo:
+    post:
+      tags: [pets]
+      summary: Upload photo
+      operationId: uploadPhoto
+      consumes: [multipart/form-data]
+      parameters:
+        - { name: petId, in: path, required: true, type: integer }
+        - { name: file, in: formData, type: file, required: true, description: Photo }
+        - { name: caption, in: formData, type: string }
+      responses:
+        "204": { description: Uploaded }
+definitions:
+  Pet:
+    type: object
+    required: [id, name]
+    discriminator: kind
+    properties:
+      id: { type: integer, format: int64 }
+      name: { type: string }
+      kind: { type: string }
+      owner: { $ref: "#/definitions/Owner" }
+      nickname: { type: string, x-nullable: true }
+  Owner:
+    type: object
+    properties:
+      name: { type: string }
+  Error:
+    type: object
+    properties:
+      message: { type: string }

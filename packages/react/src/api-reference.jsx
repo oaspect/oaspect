@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buildModel } from "@oaspect/core";
+import { buildModel, loadSpecText, normalizeSpec } from "@oaspect/core";
 import { LocaleProvider, useAvailableLocales, useLocale, useLocalized, useSetLocale, useT } from "./i18n/context";
 import { LOCALE_NAMES, directionOf, mergeMessages } from "./i18n/index";
 import { createStorage } from "./storage";
@@ -19,11 +19,6 @@ export const SPEC_SOURCE_HEADER = "x-oaspect-spec-source";
 
 // Errors are kept as translation keys (or { key, params }) and translated
 // when rendered, so they follow later language switches too.
-const INVALID_SPEC = "spec.invalid";
-
-function isOpenApi(value) {
-  return value && typeof value === "object" && (value.openapi || value.swagger) && value.paths;
-}
 
 function LanguageToggle() {
   const locale = useLocale();
@@ -141,7 +136,7 @@ function SourceMenu({ source, defaultLabel, onUrl, onFile, onDefault }) {
         <input
           ref={fileInput}
           type="file"
-          accept=".json,application/json"
+          accept=".json,.yaml,.yml,application/json,application/yaml,text/yaml"
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -191,7 +186,9 @@ function Viewer({
   const locale = useLocale();
 
   const [source, setSource] = useState({ type: "pending" });
-  const [spec, setSpec] = useState(inlineSpec ?? null);
+  // Inline documents are normalized too (Swagger 2.0 → OpenAPI 3).
+  const normalizedInline = useMemo(() => (inlineSpec ? normalizeSpec(inlineSpec) : null), [inlineSpec]);
+  const [spec, setSpec] = useState(normalizedInline);
   const [error, setError] = useState("");
   // True when the spec endpoint answered with SPEC_SOURCE_HEADER: fallback.
   const [usingFallback, setUsingFallback] = useState(false);
@@ -235,9 +232,9 @@ function Viewer({
   // Inline specs need no fetching; specUrl and ?url= sources do. File
   // sources are loaded directly in loadFile().
   useEffect(() => {
-    if (source.type === "default" && inlineSpec) {
+    if (source.type === "default" && normalizedInline) {
       /* eslint-disable react-hooks/set-state-in-effect -- adopting a new inline spec */
-      setSpec(inlineSpec);
+      setSpec(normalizedInline);
       setUsingFallback(false);
       setError("");
       /* eslint-enable react-hooks/set-state-in-effect */
@@ -259,10 +256,11 @@ function Viewer({
     fetch(url)
       .then(async (response) => {
         if (!response.ok) throw new Error(`${url} → HTTP ${response.status}`);
-        return { json: await response.json(), fallback: response.headers.get(SPEC_SOURCE_HEADER) === "fallback" };
+        return { text: await response.text(), fallback: response.headers.get(SPEC_SOURCE_HEADER) === "fallback" };
       })
-      .then(({ json, fallback }) => {
-        if (!isOpenApi(json)) throw new Error(INVALID_SPEC);
+      .then(({ text, fallback }) => {
+        // JSON or YAML; Swagger 2.0 is converted to OpenAPI 3.
+        const json = loadSpecText(text);
         if (!cancelled) {
           setSpec(json);
           setUsingFallback(fallback);
@@ -274,18 +272,17 @@ function Viewer({
     return () => {
       cancelled = true;
     };
-  }, [source, specUrl, inlineSpec, urlParam]);
+  }, [source, specUrl, normalizedInline, urlParam]);
 
   async function loadFile(file) {
     try {
-      const json = JSON.parse(await file.text());
-      if (!isOpenApi(json)) throw new Error(INVALID_SPEC);
+      const json = loadSpecText(await file.text());
       setSource({ type: "file", name: file.name });
       setSpec(json);
       setUsingFallback(false);
       setError("");
     } catch (err) {
-      setError(err instanceof SyntaxError ? { key: "spec.invalidJson", params: { name: file.name } } : err.message);
+      setError({ key: "spec.unreadableFile", params: { name: file.name, error: err.message } });
     }
   }
 

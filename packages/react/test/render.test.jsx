@@ -48,3 +48,15 @@ describe("Logo", async () => {
     expect(html).toContain("API Docs");
   });
 });
+
+describe("Swagger 2.0 input", async () => {
+  const { parseSpec } = await import("@oaspect/core");
+  const swagger = parseSpec(readFileSync(new URL("./petstore-swagger2.yaml", import.meta.url), "utf8"));
+
+  test("an inline Swagger 2.0 document is converted and rendered", () => {
+    const html = renderToString(<ApiReference spec={swagger} />);
+    expect(html).toContain("Petstore (Swagger 2.0)");
+    expect(html).toContain("Upload photo");
+    expect(html).toContain("https://petstore.example.com/v2");
+  });
+});

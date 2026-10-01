@@ -1,4 +1,6 @@
-// Loads an OpenAPI document from a file path or URL for the CLI.
+// Loads an OpenAPI document (JSON or YAML; Swagger 2.0 is converted) from a
+// file path or URL for the CLI.
+import { loadSpecText } from "@oaspect/core";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -17,14 +19,9 @@ export async function readSpecText(source) {
 
 export async function loadSpec(source) {
   const text = await readSpecText(source);
-  let spec;
   try {
-    spec = JSON.parse(text);
+    return loadSpecText(text);
   } catch (error) {
-    throw new Error(`${source} is not valid JSON: ${error.message}`);
+    throw new Error(`${source}: ${error.message}`);
   }
-  if (!spec || typeof spec !== "object" || !(spec.openapi || spec.swagger) || !spec.paths) {
-    throw new Error(`${source} is not an OpenAPI document (missing "openapi"/"swagger" or "paths").`);
-  }
-  return spec;
 }
