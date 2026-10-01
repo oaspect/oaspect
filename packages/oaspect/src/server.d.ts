@@ -9,3 +9,6 @@ export interface ProxyHandlerOptions {
 
 /** POST handler relaying the viewer's "Try" requests; mount it at `proxyUrl`. */
 export declare function createProxyHandler(options: ProxyHandlerOptions): (request: Request) => Promise<Response>;
+
+/** Builds FormData from the viewer's multipart parts ({ name, value } or { name, file: { name, type, data } }). */
+export declare function formDataFromParts(parts: Array<{ name: string; value?: string; file?: { name?: string; type?: string; data: string } }>): FormData;

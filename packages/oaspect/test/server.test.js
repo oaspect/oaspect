@@ -11,6 +11,15 @@ beforeAll(async () => {
     req.on("data", (chunk) => (body += chunk));
     req.on("end", () => {
       res.setHeader("content-type", "application/json");
+      if (String(req.headers["content-type"]).startsWith("multipart/form-data")) {
+        new Request("http://x", { method: "POST", headers: req.headers, body })
+          .formData()
+          .then(async (form) => {
+            const file = form.get("photo");
+            res.end(JSON.stringify({ caption: form.get("caption"), photo: await file.text(), photoName: file.name, photoType: file.type }));
+          });
+        return;
+      }
       res.end(JSON.stringify({ method: req.method, body, auth: req.headers.authorization ?? null, host: req.headers.host }));
     });
   });
@@ -57,6 +66,18 @@ describe("createProxyHandler", () => {
     const proxy = createProxyHandler({ allowedHosts: ["api.internal"], rewriteHost: () => new URL(`${origin}/rewritten`) });
     const result = await (await call(proxy, { url: "http://api.internal/x" })).json();
     expect(result.status).toBe(200);
+  });
+
+  test("rebuilds multipart bodies from base64 parts", async () => {
+    const proxy = createProxyHandler({ allowedHosts: "*" });
+    const response = await call(proxy, {
+      method: "POST",
+      url: `${origin}/upload`,
+      headers: { "Content-Type": "multipart/form-data" },
+      form: [{ name: "caption", value: "hi" }, { name: "photo", file: { name: "a.txt", type: "text/plain", data: btoa("file contents") } }],
+    });
+    const result = await response.json();
+    expect(JSON.parse(result.body)).toEqual({ caption: "hi", photo: "file contents", photoName: "a.txt", photoType: "text/plain" });
   });
 
   test("reports unreachable targets as 502", async () => {

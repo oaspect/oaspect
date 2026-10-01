@@ -13,6 +13,28 @@ const DROPPED_HEADERS = new Set([
 
 const json = (body, status = 200) => Response.json(body, { status });
 
+function decodeBase64(data) {
+  const binary = atob(String(data ?? ""));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+// multipart parts from the viewer: { name, value } or
+// { name, file: { name, type, data: base64 } }.
+export function formDataFromParts(parts) {
+  const data = new FormData();
+  for (const part of parts) {
+    if (part?.file) {
+      const blob = new Blob([decodeBase64(part.file.data)], { type: part.file.type || "application/octet-stream" });
+      data.append(String(part.name), blob, String(part.file.name || "file"));
+    } else {
+      data.append(String(part?.name), String(part?.value ?? ""));
+    }
+  }
+  return data;
+}
+
 function normalizeHosts(allowedHosts) {
   if (allowedHosts === "*") return "*";
   return (allowedHosts ?? []).map((host) => String(host).trim().toLowerCase()).filter(Boolean);
@@ -52,7 +74,7 @@ export function createProxyHandler({ allowedHosts, timeoutMs = 30_000, rewriteHo
       return json({ error: "Invalid request body." }, 400);
     }
 
-    const { method = "GET", url, headers = {}, body } = payload ?? {};
+    const { method = "GET", url, headers = {}, body, form } = payload ?? {};
     let target;
     try {
       target = new URL(url);
@@ -67,8 +89,10 @@ export function createProxyHandler({ allowedHosts, timeoutMs = 30_000, rewriteHo
     if (rewriteHost) target = rewriteHost(new URL(target));
 
     const upperMethod = String(method).toUpperCase();
+    const multipart = Array.isArray(form);
+    // For multipart, fetch sets Content-Type itself (with the boundary).
     const forwarded = Object.fromEntries(
-      Object.entries(headers).filter(([key]) => !DROPPED_HEADERS.has(key.toLowerCase())),
+      Object.entries(headers).filter(([key]) => !DROPPED_HEADERS.has(key.toLowerCase()) && !(multipart && key.toLowerCase() === "content-type")),
     );
     const started = Date.now();
 
@@ -76,7 +100,7 @@ export function createProxyHandler({ allowedHosts, timeoutMs = 30_000, rewriteHo
       const response = await fetch(target, {
         method: upperMethod,
         headers: forwarded,
-        body: upperMethod === "GET" || upperMethod === "HEAD" ? undefined : body,
+        body: upperMethod === "GET" || upperMethod === "HEAD" ? undefined : multipart ? formDataFromParts(form) : body,
         redirect: "manual",
         signal: AbortSignal.timeout(timeoutMs),
       });
