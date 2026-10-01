@@ -1,6 +1,6 @@
 {
   "name": "@oaspect/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Framework-free OpenAPI processing for documentation UIs: $ref resolution, examples, code samples, Markdown and syntax highlighting.",
   "license": "MIT",
   "homepage": "https://oaspect.dev",
