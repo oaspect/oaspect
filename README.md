@@ -85,6 +85,29 @@ const proxy = createProxyHandler({ allowedHosts: ["api.example.com"] });
 Then pass `proxyUrl: "/proxy"` to the viewer. Keep `allowedHosts` to your API:
 an open relay lets anyone reach what your server can reach.
 
+### Server spec endpoint
+
+Serve the document from your server, from a live URL with a bundled fallback:
+
+```js
+import { createSpecHandler } from "oaspect/server";
+
+export const GET = createSpecHandler({
+  url: process.env.SPEC_URL,                 // fetched server-side, cached 60 s
+  fallback: () => readFile("openapi.json", "utf8"),
+});
+```
+
+When the live document cannot be reached, the fallback is served with
+`x-oaspect-spec-source: fallback` and the viewer shows an out-of-date notice.
+
+## Examples
+
+- [`examples/html`](examples/html): one script tag, no build step
+- [`examples/nextjs`](examples/nextjs): App Router page, spec and proxy route handlers
+- [`examples/node`](examples/node): `node:http` server without a framework
+- [`apps/playground`](apps/playground): development app with sample documents
+
 ## Configuration
 
 | Option (`Oaspect.init` / React prop) | Default | Description |
