@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 
 // Sample documents covering the viewer's features.
 const SPECS = {
+  "Roastery (3.1 showcase: TR/AR, oneOf, uploads)": "/specs/roastery.yaml",
   "Bookstore (OpenAPI 3.0)": "/specs/bookstore.json",
   "Petstore (Swagger 2.0, YAML)": "/specs/petstore-swagger2.yaml",
   "Events (3.1: webhooks, callbacks, links)": "/specs/events.json",
