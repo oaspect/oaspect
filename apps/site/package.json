@@ -3,9 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "screenshots": "node screenshots.mjs"
   },
   "dependencies": {
     "oaspect": "workspace:*"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.43.1"
   }
 }
