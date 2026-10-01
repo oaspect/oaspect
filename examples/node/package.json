@@ -1,0 +1,11 @@
+{
+  "name": "@oaspect/example-node",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "oaspect": "workspace:*"
+  }
+}
