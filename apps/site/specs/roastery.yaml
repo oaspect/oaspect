@@ -1,0 +1,736 @@
+openapi: 3.1.0
+info:
+  title: Roastery API
+  version: 2.4.0
+  x-i18n:
+    tr: { title: Roastery API }
+    ar: { title: واجهة Roastery البرمجية }
+  description: |
+    :::lang en
+    The Roastery API runs a specialty coffee business: the **bean catalog**,
+    **roast schedules**, **orders** and **subscriptions**.
+
+    | Environment | Base URL                          | Data            |
+    | ----------- | --------------------------------- | --------------- |
+    | Production  | `https://api.roastery.dev/v2`     | Live            |
+    | Sandbox     | `https://{region}.sandbox.roastery.dev/v2` | Reset nightly |
+
+    Every request needs a bearer token. Lists are paginated with `page` and
+    `per_page`; responses carry the totals in `meta`.
+
+    > Sandbox orders are never shipped, so try anything there.
+    :::
+
+    :::lang tr
+    Roastery API bir nitelikli kahve işletmesini yönetir: **çekirdek kataloğu**,
+    **kavurma planları**, **siparişler** ve **abonelikler**.
+
+    | Ortam     | Temel URL                         | Veri               |
+    | --------- | --------------------------------- | ------------------ |
+    | Canlı     | `https://api.roastery.dev/v2`     | Gerçek             |
+    | Sandbox   | `https://{region}.sandbox.roastery.dev/v2` | Her gece sıfırlanır |
+
+    Her istek bir bearer token ister. Listeler `page` ve `per_page` ile
+    sayfalanır; toplamlar yanıttaki `meta` alanındadır.
+
+    > Sandbox siparişleri hiçbir zaman kargolanmaz, gönül rahatlığıyla deneyin.
+    :::
+
+    :::lang ar
+    تدير واجهة Roastery أعمال القهوة المختصة: **كتالوج البن** و**جداول
+    التحميص** و**الطلبات** و**الاشتراكات**.
+
+    | البيئة   | العنوان الأساسي                   | البيانات          |
+    | -------- | --------------------------------- | ----------------- |
+    | الإنتاج  | `https://api.roastery.dev/v2`     | حقيقية            |
+    | التجربة  | `https://{region}.sandbox.roastery.dev/v2` | تُمسح كل ليلة |
+
+    يتطلب كل طلب رمز Bearer. القوائم مقسمة إلى صفحات عبر `page` و`per_page`.
+
+    > لا يتم شحن طلبات بيئة التجربة أبدًا.
+    :::
+  contact:
+    name: Roastery developer support
+    url: https://oaspect.dev
+  license:
+    name: MIT
+    identifier: MIT
+
+servers:
+  - url: https://api.roastery.dev/v2
+    description: Production
+  - url: https://{region}.sandbox.roastery.dev/v2
+    description: Sandbox
+    variables:
+      region:
+        default: eu
+        enum: [eu, us, ap]
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Beans
+    description: Green and roasted coffee in the catalog.
+    x-i18n:
+      tr: { name: Çekirdekler, description: Katalogdaki çiğ ve kavrulmuş kahveler. }
+      ar: { name: حبوب البن, description: البن الأخضر والمحمص في الكتالوج. }
+  - name: Roasts
+    description: Roast batches and their profiles.
+    x-i18n:
+      tr: { name: Kavurmalar, description: Kavurma partileri ve profilleri. }
+      ar: { name: التحميص, description: دفعات التحميص وملفاتها. }
+  - name: Orders
+    description: Orders from the web shop and wholesale customers.
+    x-i18n:
+      tr: { name: Siparişler, description: Web mağazası ve toptan müşteri siparişleri. }
+      ar: { name: الطلبات, description: طلبات المتجر الإلكتروني وعملاء الجملة. }
+  - name: Subscriptions
+    description: Recurring deliveries.
+    x-i18n:
+      tr: { name: Abonelikler, description: Düzenli teslimatlar. }
+      ar: { name: الاشتراكات, description: التوصيلات الدورية. }
+  - name: Customers
+    x-i18n:
+      tr: { name: Müşteriler }
+      ar: { name: العملاء }
+
+paths:
+  /beans:
+    get:
+      operationId: beans_list
+      tags: [Beans]
+      summary: List beans
+      x-i18n:
+        tr: { summary: Çekirdekleri listele }
+        ar: { summary: عرض حبوب البن }
+      description: Returns the catalog, newest first. Filter by origin, process or availability.
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: origin
+          in: query
+          description: ISO 3166-1 alpha-2 country code of the farm.
+          x-i18n:
+            tr: { description: Çiftliğin ISO 3166-1 alpha-2 ülke kodu. }
+          schema: { type: string, pattern: "^[A-Z]{2}$", example: ET }
+        - name: process
+          in: query
+          schema: { $ref: "#/components/schemas/Process" }
+        - name: in_stock
+          in: query
+          description: Only beans that can be ordered now.
+          x-i18n:
+            tr: { description: Yalnızca şu an sipariş verilebilen çekirdekler. }
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: A page of beans
+          x-i18n:
+            tr: { description: Bir sayfa çekirdek }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Bean" } }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      operationId: beans_create
+      tags: [Beans]
+      summary: Add a bean
+      x-i18n:
+        tr: { summary: Çekirdek ekle }
+        ar: { summary: إضافة نوع بن }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BeanInput" }
+      responses:
+        "201":
+          description: Created
+          x-i18n:
+            tr: { description: Oluşturuldu }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bean" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+  /beans/{bean_id}:
+    parameters:
+      - $ref: "#/components/parameters/BeanId"
+    get:
+      operationId: beans_show
+      tags: [Beans]
+      summary: Get a bean
+      x-i18n:
+        tr: { summary: Çekirdeği getir }
+        ar: { summary: عرض نوع بن }
+      responses:
+        "200":
+          description: The bean
+          x-i18n:
+            tr: { description: Çekirdek }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bean" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: beans_update
+      tags: [Beans]
+      summary: Update a bean
+      x-i18n:
+        tr: { summary: Çekirdeği güncelle }
+        ar: { summary: تحديث نوع بن }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BeanInput" }
+      responses:
+        "200":
+          description: Updated
+          x-i18n:
+            tr: { description: Güncellendi }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bean" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: beans_delete
+      tags: [Beans]
+      summary: Remove a bean
+      x-i18n:
+        tr: { summary: Çekirdeği kaldır }
+        ar: { summary: حذف نوع بن }
+      responses:
+        "204":
+          description: Removed
+          x-i18n:
+            tr: { description: Kaldırıldı }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /beans/{bean_id}/photo:
+    parameters:
+      - $ref: "#/components/parameters/BeanId"
+    put:
+      operationId: beans_photo
+      tags: [Beans]
+      summary: Upload a bag photo
+      x-i18n:
+        tr: { summary: Paket fotoğrafı yükle }
+        ar: { summary: رفع صورة الكيس }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photo]
+              properties:
+                photo: { type: string, format: binary }
+                alt: { type: string, example: Ethiopia Guji, 250 g bag }
+            encoding:
+              photo: { contentType: "image/png, image/jpeg" }
+      responses:
+        "200":
+          description: Photo stored
+          x-i18n:
+            tr: { description: Fotoğraf kaydedildi }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, format: uri, example: "https://cdn.roastery.dev/beans/eth-guji.png" }
+  /roasts:
+    get:
+      operationId: roasts_list
+      tags: [Roasts]
+      summary: List roast batches
+      x-i18n:
+        tr: { summary: Kavurma partilerini listele }
+        ar: { summary: عرض دفعات التحميص }
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: date
+          in: query
+          schema: { type: string, format: date, example: "2026-10-02" }
+      responses:
+        "200":
+          description: A page of roast batches
+          x-i18n:
+            tr: { description: Bir sayfa kavurma partisi }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Roast" } }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+    post:
+      operationId: roasts_schedule
+      tags: [Roasts]
+      summary: Schedule a roast
+      x-i18n:
+        tr: { summary: Kavurma planla }
+        ar: { summary: جدولة تحميص }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bean_id, profile, kilograms, roast_at]
+              properties:
+                bean_id: { type: string, example: bean_eth_guji }
+                profile: { $ref: "#/components/schemas/RoastLevel" }
+                kilograms: { type: number, minimum: 1, maximum: 60, example: 12.5 }
+                roast_at: { type: string, format: date-time, example: "2026-10-03T07:30:00Z" }
+      responses:
+        "201":
+          description: Scheduled
+          x-i18n:
+            tr: { description: Planlandı }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Roast" }
+          links:
+            GetRoast:
+              operationId: roasts_show
+              parameters: { roast_id: "$response.body#/id" }
+  /roasts/{roast_id}:
+    get:
+      operationId: roasts_show
+      tags: [Roasts]
+      summary: Get a roast batch
+      x-i18n:
+        tr: { summary: Kavurma partisini getir }
+        ar: { summary: عرض دفعة تحميص }
+      parameters:
+        - name: roast_id
+          in: path
+          required: true
+          schema: { type: string, example: roast_7Hq2 }
+      responses:
+        "200":
+          description: The roast batch
+          x-i18n:
+            tr: { description: Kavurma partisi }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Roast" }
+  /orders:
+    post:
+      operationId: orders_create
+      tags: [Orders]
+      summary: Place an order
+      x-i18n:
+        tr:
+          summary: Sipariş ver
+          description: |
+            Siparişi oluşturur ve ödemeyi alır. Tekrarlanan bir istek iki kez
+            ödeme almasın diye `Idempotency-Key` gönderin.
+        ar:
+          summary: إنشاء طلب
+          description: ينشئ الطلب ويحصّل المبلغ. أرسل `Idempotency-Key` حتى لا يُحصَّل المبلغ مرتين عند إعادة الطلب.
+      description: |
+        Places an order and charges it. Send an `Idempotency-Key` so a retried
+        request never charges twice.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, format: uuid, example: 6f1c7a3e-2b9d-4c55-9a51-0e8f2d6b7c10 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrderInput" }
+      responses:
+        "201":
+          description: Order placed
+          x-i18n:
+            tr: { description: Sipariş verildi }
+            ar: { description: تم إنشاء الطلب }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "402":
+          description: Payment declined
+          x-i18n:
+            tr: { description: Ödeme reddedildi }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    get:
+      operationId: orders_list
+      tags: [Orders]
+      summary: List orders
+      x-i18n:
+        tr: { summary: Siparişleri listele }
+        ar: { summary: عرض الطلبات }
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/OrderStatus" }
+      responses:
+        "200":
+          description: A page of orders
+          x-i18n:
+            tr: { description: Bir sayfa sipariş }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Order" } }
+                  meta: { $ref: "#/components/schemas/PageMeta" }
+  /orders/{order_id}:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    get:
+      operationId: orders_show
+      tags: [Orders]
+      summary: Get an order
+      x-i18n:
+        tr: { summary: Siparişi getir }
+        ar: { summary: عرض طلب }
+      responses:
+        "200":
+          description: The order
+          x-i18n:
+            tr: { description: Sipariş }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /orders/{order_id}/cancel:
+    parameters:
+      - $ref: "#/components/parameters/OrderId"
+    post:
+      operationId: orders_cancel
+      tags: [Orders]
+      summary: Cancel an order
+      x-i18n:
+        tr: { summary: Siparişi iptal et }
+        ar: { summary: إلغاء طلب }
+      description: Only orders that have not shipped yet can be cancelled; the charge is refunded.
+      responses:
+        "200":
+          description: Cancelled
+          x-i18n:
+            tr: { description: İptal edildi }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "409":
+          description: Already shipped
+          x-i18n:
+            tr: { description: Zaten kargolandı }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /subscriptions:
+    get:
+      operationId: subscriptions_list
+      tags: [Subscriptions]
+      summary: List subscriptions
+      x-i18n:
+        tr: { summary: Abonelikleri listele }
+        ar: { summary: عرض الاشتراكات }
+      responses:
+        "200":
+          description: Subscriptions
+          x-i18n:
+            tr: { description: Abonelikler }
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Subscription" } }
+    post:
+      operationId: subscriptions_create
+      tags: [Subscriptions]
+      summary: Start a subscription
+      x-i18n:
+        tr: { summary: Abonelik başlat }
+        ar: { summary: بدء اشتراك }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, bean_id, every]
+              properties:
+                customer_id: { type: string, example: cus_41aX }
+                bean_id: { type: string, example: bean_eth_guji }
+                grams: { type: integer, enum: [250, 500, 1000], default: 250 }
+                every: { type: string, enum: [week, two_weeks, month], example: two_weeks }
+      responses:
+        "201":
+          description: Started
+          x-i18n:
+            tr: { description: Başlatıldı }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Subscription" }
+  /subscriptions/{subscription_id}/pause:
+    post:
+      operationId: subscriptions_pause
+      tags: [Subscriptions]
+      summary: Pause a subscription
+      x-i18n:
+        tr: { summary: Aboneliği duraklat }
+        ar: { summary: إيقاف اشتراك مؤقتًا }
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          schema: { type: string, example: sub_9Kp3 }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                until: { type: string, format: date, example: "2026-11-01" }
+      responses:
+        "200":
+          description: Paused
+          x-i18n:
+            tr: { description: Duraklatıldı }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Subscription" }
+  /customers/{customer_id}:
+    get:
+      operationId: customers_show
+      tags: [Customers]
+      summary: Get a customer
+      x-i18n:
+        tr: { summary: Müşteriyi getir }
+        ar: { summary: عرض عميل }
+      parameters:
+        - name: customer_id
+          in: path
+          required: true
+          schema: { type: string, example: cus_41aX }
+      responses:
+        "200":
+          description: The customer
+          x-i18n:
+            tr: { description: Müşteri }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Customer" }
+
+webhooks:
+  order.shipped:
+    post:
+      operationId: webhook_order_shipped
+      summary: Order shipped
+      x-i18n:
+        tr: { summary: Sipariş kargolandı }
+        ar: { summary: تم شحن الطلب }
+      description: Sent when a parcel leaves the roastery, with its tracking number.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event: { type: string, const: order.shipped }
+                order: { $ref: "#/components/schemas/Order" }
+                tracking_url: { type: string, format: uri, example: "https://track.example/RX4419" }
+      responses:
+        "200":
+          description: Acknowledged
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Personal or app token from the dashboard.
+
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    BeanId:
+      name: bean_id
+      in: path
+      required: true
+      schema: { type: string, example: bean_eth_guji }
+    OrderId:
+      name: order_id
+      in: path
+      required: true
+      schema: { type: string, example: ord_2Wd8 }
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid token
+      x-i18n:
+        tr: { description: Token yok ya da geçersiz }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Not found
+      x-i18n:
+        tr: { description: Bulunamadı }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationError:
+      description: Invalid input
+      x-i18n:
+        tr: { description: Geçersiz veri }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Process:
+      type: string
+      enum: [washed, natural, honey, anaerobic]
+      example: washed
+    RoastLevel:
+      type: string
+      enum: [light, medium, espresso]
+      example: light
+    Bean:
+      type: object
+      required: [id, name, origin, process, price]
+      properties:
+        id: { type: string, example: bean_eth_guji }
+        name: { type: string, example: Guji Hambela }
+        origin: { type: string, description: Country code, example: ET }
+        region: { type: string, example: Oromia }
+        altitude_m: { type: integer, example: 2100 }
+        process: { $ref: "#/components/schemas/Process" }
+        notes:
+          type: array
+          items: { type: string }
+          example: [jasmine, bergamot, peach]
+        price: { $ref: "#/components/schemas/Money" }
+        in_stock: { type: boolean, example: true }
+        created_at: { type: string, format: date-time, example: "2026-09-12T08:00:00Z" }
+    BeanInput:
+      type: object
+      required: [name, origin, process, price]
+      properties:
+        name: { type: string, minLength: 2, example: Guji Hambela }
+        origin: { type: string, pattern: "^[A-Z]{2}$", example: ET }
+        process: { $ref: "#/components/schemas/Process" }
+        notes: { type: array, items: { type: string }, maxItems: 5, example: [jasmine, bergamot] }
+        price: { $ref: "#/components/schemas/Money" }
+    Roast:
+      type: object
+      properties:
+        id: { type: string, example: roast_7Hq2 }
+        bean_id: { type: string, example: bean_eth_guji }
+        profile: { $ref: "#/components/schemas/RoastLevel" }
+        kilograms: { type: number, example: 12.5 }
+        status: { type: string, enum: [scheduled, roasting, cooling, done], example: scheduled }
+        roast_at: { type: string, format: date-time, example: "2026-10-03T07:30:00Z" }
+    OrderStatus:
+      type: string
+      enum: [pending, paid, shipped, cancelled]
+      example: paid
+    OrderInput:
+      type: object
+      required: [customer_id, items, payment]
+      properties:
+        customer_id: { type: string, example: cus_41aX }
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [bean_id, grams]
+            properties:
+              bean_id: { type: string, example: bean_eth_guji }
+              grams: { type: integer, enum: [250, 500, 1000], example: 500 }
+              grind: { type: string, enum: [whole, espresso, filter, french_press], default: whole }
+        payment:
+          oneOf:
+            - $ref: "#/components/schemas/CardPayment"
+            - $ref: "#/components/schemas/InvoicePayment"
+          discriminator:
+            propertyName: method
+        note: { type: string, maxLength: 280, example: Leave it with the neighbour. }
+    CardPayment:
+      type: object
+      title: Card
+      required: [method, token]
+      properties:
+        method: { type: string, const: card }
+        token: { type: string, example: tok_visa_4242 }
+    InvoicePayment:
+      type: object
+      title: Invoice
+      required: [method, tax_id]
+      properties:
+        method: { type: string, const: invoice }
+        tax_id: { type: string, example: TR1234567890 }
+        due_days: { type: integer, enum: [14, 30], default: 30 }
+    Order:
+      allOf:
+        - $ref: "#/components/schemas/OrderInput"
+        - type: object
+          properties:
+            id: { type: string, example: ord_2Wd8 }
+            status: { $ref: "#/components/schemas/OrderStatus" }
+            total: { $ref: "#/components/schemas/Money" }
+            created_at: { type: string, format: date-time, example: "2026-10-02T09:14:00Z" }
+    Subscription:
+      type: object
+      properties:
+        id: { type: string, example: sub_9Kp3 }
+        customer_id: { type: string, example: cus_41aX }
+        bean_id: { type: string, example: bean_eth_guji }
+        grams: { type: integer, example: 250 }
+        every: { type: string, example: two_weeks }
+        status: { type: string, enum: [active, paused, cancelled], example: active }
+        next_delivery: { type: string, format: date, example: "2026-10-16" }
+    Customer:
+      type: object
+      properties:
+        id: { type: string, example: cus_41aX }
+        name: { type: string, example: Ada Yılmaz }
+        email: { type: string, format: email, example: ada@example.com }
+        wholesale: { type: boolean, example: false }
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: integer, description: Minor units (cents), example: 1850 }
+        currency: { type: string, enum: [EUR, USD, TRY], example: EUR }
+    PageMeta:
+      type: object
+      properties:
+        page: { type: integer, example: 1 }
+        per_page: { type: integer, example: 20 }
+        total: { type: integer, example: 42 }
+    Error:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, example: Validation failed }
+        errors:
+          type: object
+          additionalProperties: { type: array, items: { type: string } }
+          example: { origin: [Must be a two-letter country code.] }

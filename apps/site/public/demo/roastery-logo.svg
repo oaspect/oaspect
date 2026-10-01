@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 28" fill="none">
+  <g transform="rotate(-30 14 14)">
+    <ellipse cx="14" cy="14" rx="8" ry="12" fill="#8b5a2b"/>
+    <path d="M14 3c-3 5 3 9 0 13s3 7 0 9" stroke="#f5e6d3" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <text x="32" y="20" font-family="ui-sans-serif, system-ui, sans-serif" font-size="17" font-weight="700" fill="#8b5a2b">Roastery</text>
+</svg>
