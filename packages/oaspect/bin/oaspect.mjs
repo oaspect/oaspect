@@ -25,6 +25,8 @@ Options:
       --locale <code>       UI language: en, tr, ar… (default: en)
       --theme <light|dark>  force a theme
       --logo <url>          header logo image
+      --no-prerender        build: render in the browser only (smaller file, no
+                            content without JavaScript or for search engines)
       --port <number>       serve: port (default: 8080)
       --host <address>      serve: bind address (default: 127.0.0.1)
       --proxy-hosts <list>  serve: hosts the proxy may call (default: any, loopback only)
@@ -52,6 +54,7 @@ const { values, positionals } = (() => {
         host: { type: "string" },
         "proxy-hosts": { type: "string" },
         "no-proxy": { type: "boolean" },
+        "no-prerender": { type: "boolean" },
         help: { type: "boolean", short: "h" },
         version: { type: "boolean", short: "v" },
       },
@@ -87,12 +90,21 @@ try {
   if (command === "build") {
     const spec = await loadSpec(source);
     const output = resolve(values.output ?? `${basename(isUrl(source) ? new URL(source).pathname : source, extname(source)) || "openapi"}.html`);
+    // No "Source" menu or ?url= loading in a static file; there is no proxy
+    // either. Prerendered pages render every section (no lazy placeholders)
+    // so the HTML holds the whole reference.
+    const pageConfig = { ...config, urlParam: null, features: { sourceMenu: false }, ...(values["no-prerender"] ? {} : { lazy: false }) };
+    let prerendered = {};
+    if (!values["no-prerender"]) {
+      const { renderToHtml, css } = await import("../dist/ssr.js");
+      prerendered = { markup: renderToHtml({ ...pageConfig, spec }), css };
+    }
     const html = renderHtml({
       title: values.title ?? spec.info?.title ?? "API Reference",
-      // No "Source" menu or ?url= loading in a static file; there is no proxy either.
-      config: { ...config, urlParam: null, features: { sourceMenu: false } },
+      config: pageConfig,
       spec,
       script: { inline: await readFile(bundlePath, "utf8") },
+      ...prerendered,
     });
     await writeFile(output, html);
     console.log(`Wrote ${output} (${(Buffer.byteLength(html) / 1024).toFixed(0)} KB)`);

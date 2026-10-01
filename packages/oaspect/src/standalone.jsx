@@ -8,9 +8,10 @@
 //
 //   <oaspect-reference spec-url="/openapi.json"></oaspect-reference>
 //   <script src="https://cdn.jsdelivr.net/npm/oaspect" data-spec-url="/openapi.json"></script>
-import { ApiReference, Logo } from "@oaspect/react";
+import { ApiReference } from "@oaspect/react";
 import css from "@oaspect/react/styles.css";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { toProps } from "./props";
 
 const VERSION = process.env.OASPECT_VERSION;
 const STYLE_ID = "oaspect-styles";
@@ -23,15 +24,6 @@ function injectStyles() {
   document.head.append(style);
 }
 
-// Plain-object config → <ApiReference> props. `logo` may be a URL or
-// { light, dark, alt, label }.
-function toProps(config = {}) {
-  const { logo, ...props } = config;
-  if (typeof logo === "string") props.logo = <Logo light={logo} alt={config.title ?? ""} />;
-  else if (logo && typeof logo === "object") props.logo = <Logo {...logo} />;
-  return props;
-}
-
 /**
  * Mounts the viewer into `target` (element or selector).
  * @returns {{ update(config: object): void, destroy(): void }}
@@ -42,9 +34,13 @@ export function init(target, config) {
 
   injectStyles();
   const root = createRoot(element);
-  let current = config;
-  root.render(<ApiReference {...toProps(current)} />);
+  root.render(<ApiReference {...toProps(config)} />);
 
+  return controls(root, config);
+}
+
+function controls(root, initial) {
+  let current = initial;
   return {
     update(next) {
       current = { ...current, ...next };
@@ -54,6 +50,18 @@ export function init(target, config) {
       root.unmount();
     },
   };
+}
+
+/**
+ * Attaches to markup prerendered by `oaspect build` (renderToHtml) instead of
+ * rendering from scratch. `config` must match the one used for prerendering.
+ */
+export function hydrate(target, config) {
+  const element = typeof target === "string" ? document.querySelector(target) : target;
+  if (!element) throw new Error(`Oaspect.hydrate: ${target} not found`);
+  injectStyles();
+  const props = toProps(config);
+  return controls(hydrateRoot(element, <ApiReference {...props} />), config);
 }
 
 // Attribute (kebab-case) → config key. Booleans for features use

@@ -18,16 +18,27 @@ const scriptJson = (value) =>
     .replace(/\u2028/g, "\\u2028")
     .replace(/\u2029/g, "\\u2029");
 
+// Sets <html data-theme> from the reader's stored or system preference before
+// the first paint, so prerendered markup does not flash the wrong theme.
+const themeScript = (storagePrefix) => `(() => {
+  let theme;
+  try { theme = localStorage.getItem(${scriptJson(`${storagePrefix}:theme`)}); } catch {}
+  if (theme !== "light" && theme !== "dark") theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.dataset.theme = theme;
+})();`;
+
 /**
  * @param {{
  *   title?: string,
  *   config?: object,            // Oaspect.init() config (specUrl, locale…)
  *   spec?: object,              // inlined OpenAPI document
  *   script?: { src?: string, inline?: string },
- *   icon?: string,               // favicon URL (default: built-in icon)
+ *   icon?: string,              // favicon URL (default: built-in icon)
+ *   markup?: string,            // prerendered viewer HTML (hydrated instead of rendered)
+ *   css?: string,               // stylesheet to inline, needed with markup
  * }} options
  */
-export function renderHtml({ title = "API Reference", config = {}, spec, script = {}, icon = DEFAULT_ICON }) {
+export function renderHtml({ title = "API Reference", config = {}, spec, script = {}, icon = DEFAULT_ICON, markup, css }) {
   const scriptTag = script.inline
     ? `<script>${script.inline.replace(/<\/script/gi, "<\\/script")}</script>`
     : `<script src="${escapeHtml(script.src ?? "oaspect.js")}"></script>`;
@@ -35,6 +46,12 @@ export function renderHtml({ title = "API Reference", config = {}, spec, script 
   const configExpression = spec
     ? `Object.assign(${scriptJson(config)}, { spec: JSON.parse(document.getElementById("oaspect-spec").textContent) })`
     : scriptJson(config);
+  const head = [
+    css ? `<style id="oaspect-styles">${css.replace(/<\/style/gi, "<\\/style")}</style>` : "",
+    config.theme ? "" : `<script>${themeScript(config.storagePrefix ?? "oaspect")}</script>`,
+  ]
+    .filter(Boolean)
+    .join("\n    ");
 
   return `<!doctype html>
 <html lang="${escapeHtml(config.locale ?? config.defaultLocale ?? "en")}">
@@ -44,12 +61,12 @@ export function renderHtml({ title = "API Reference", config = {}, spec, script 
     <meta name="generator" content="oaspect" />
     <title>${escapeHtml(title)}</title>
     <link rel="icon" href="${escapeHtml(icon)}" />
-    <style>body { margin: 0 }</style>
+    <style>body { margin: 0 }</style>${head ? `\n    ${head}` : ""}
   </head>
   <body>
-    <div id="oaspect"></div>${specTag}
+    <div id="oaspect">${markup ?? ""}</div>${specTag}
     ${scriptTag}
-    <script>Oaspect.init("#oaspect", ${configExpression});</script>
+    <script>Oaspect.${markup ? "hydrate" : "init"}("#oaspect", ${configExpression});</script>
   </body>
 </html>
 `;

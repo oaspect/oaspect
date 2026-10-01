@@ -35,6 +35,27 @@ describe("oaspect build", () => {
     expect(html).not.toMatch(/<script src=/);
   });
 
+  test("prerenders the reference by default and hydrates it", () => {
+    const out = join(mkdtempSync(join(tmpdir(), "oaspect-cli-")), "docs.html");
+    run("build", SPEC, "-o", out);
+    const html = readFileSync(out, "utf8");
+    const markup = html.slice(html.indexOf('<div id="oaspect">'), html.indexOf('<script type="application/json"'));
+    expect(markup).toContain('id="operation/books-destroy"');
+    expect(markup).toContain("Delete book");
+    expect(html).toContain('<style id="oaspect-styles">');
+    expect(html).toContain('Oaspect.hydrate("#oaspect"');
+    expect(html).toContain('"lazy":false');
+    expect(html).toContain('localStorage.getItem("oaspect:theme")');
+  });
+
+  test("--no-prerender renders in the browser only", () => {
+    const out = join(mkdtempSync(join(tmpdir(), "oaspect-cli-")), "docs.html");
+    run("build", SPEC, "-o", out, "--no-prerender");
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('<div id="oaspect"></div>');
+    expect(html).toContain('Oaspect.init("#oaspect"');
+  });
+
   test("reports errors and usage", () => {
     expect(() => run("build", "missing.json")).toThrow(/ENOENT/);
     expect(() => run("frob", SPEC)).toThrow(/unknown command/);

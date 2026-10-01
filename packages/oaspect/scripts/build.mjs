@@ -29,6 +29,22 @@ const standalone = await build({
   logLevel: "warning",
 });
 
+// Prerendering for the CLI (Node): React, react-dom/server and the viewer.
+await build({
+  entryPoints: [resolve(root, "src/ssr.jsx")],
+  outfile: resolve(root, "dist/ssr.js"),
+  bundle: true,
+  format: "esm",
+  platform: "node",
+  target: "node20",
+  jsx: "automatic",
+  loader: { ".css": "text" },
+  define: { "process.env.NODE_ENV": '"production"' },
+  // Bundled CommonJS dependencies (yaml) require Node built-ins at runtime.
+  banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' },
+  logLevel: "warning",
+});
+
 await build({
   entryPoints: [resolve(root, "src/server.js")],
   outfile: resolve(root, "dist/server.js"),
