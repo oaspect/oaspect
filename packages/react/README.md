@@ -1,5 +1,7 @@
 # @oaspect/react
 
+<a href="https://oaspect.dev/demo/roastery.html"><img src="https://oaspect.dev/images/hero-light.webp" alt="oaspect rendering an OpenAPI document: navigation, an operation and code samples" width="100%" /></a>
+
 The [oaspect](https://github.com/oaspect/oaspect) API reference as a React component.
 
 ```jsx

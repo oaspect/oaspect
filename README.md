@@ -1,9 +1,36 @@
-# oaspect
+<p align="center">
+  <a href="https://oaspect.dev">
+    <img src="apps/site/public/images/logo.svg" width="64" height="64" alt="" />
+  </a>
+</p>
 
-Interactive API reference for OpenAPI documents — a lightweight alternative to
-Redoc and Scalar.
+<h1 align="center">oaspect</h1>
 
-**[oaspect.dev](https://oaspect.dev)**: guide, reference and live demos.
+<p align="center">
+  Interactive API reference for OpenAPI documents: try requests in place, code in 30 clients, docs in any language.
+  <br />
+  <a href="https://oaspect.dev"><b>Website</b></a> ·
+  <a href="https://oaspect.dev/reference.html"><b>Guide</b></a> ·
+  <a href="https://oaspect.dev/demo/roastery.html"><b>Live demo</b></a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/oaspect"><img src="https://img.shields.io/npm/v/oaspect?color=16a34a" alt="npm version" /></a>
+  <a href="https://github.com/oaspect/oaspect/actions/workflows/ci.yml"><img src="https://github.com/oaspect/oaspect/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://www.jsdelivr.com/package/npm/oaspect"><img src="https://img.shields.io/jsdelivr/npm/hm/oaspect?color=16a34a" alt="jsDelivr hits" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/oaspect/oaspect?color=16a34a" alt="MIT license" /></a>
+</p>
+
+<p align="center">
+  <a href="https://oaspect.dev/demo/roastery.html">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="apps/site/public/images/hero-dark.webp" />
+      <img src="apps/site/public/images/hero-light.webp" alt="oaspect rendering the Roastery demo: navigation, an operation with its request body, and a cURL sample with the response" width="100%" />
+    </picture>
+  </a>
+</p>
+
+A lightweight alternative to Redoc and Scalar.
 
 - Three-column reference: navigation, details, code samples
 - **Try it**: edit parameters and body (including file uploads), send the
@@ -21,9 +48,24 @@ Redoc and Scalar.
   language; spec text translated with `x-i18n` and `:::lang` blocks
 - Light/dark themes, mobile layout, deep links, ⌘K search
 - Styles scoped under `.oaspect`: drop it into any page without CSS conflicts
-- 128 KB gzipped as a single script, React included
+- 138 KB gzipped as a single script, React included
 
 > Status: early (0.x). APIs may change before 1.0.
+
+<table>
+  <tr>
+    <td width="50%"><b>Try it</b>: send requests, see status, headers and body<br /><br />
+      <picture><source media="(prefers-color-scheme: dark)" srcset="apps/site/public/images/try-it-dark.webp" /><img src="apps/site/public/images/try-it-light.webp" alt="The Try it dialog with a 200 response" /></picture></td>
+    <td width="50%"><b>Schemas</b>: nested fields, oneOf tabs, constraints<br /><br />
+      <picture><source media="(prefers-color-scheme: dark)" srcset="apps/site/public/images/schema-dark.webp" /><img src="apps/site/public/images/schema-light.webp" alt="A request body with nested items and a oneOf payment" /></picture></td>
+  </tr>
+  <tr>
+    <td width="50%"><b>Turkish</b>: UI and spec translated<br /><br />
+      <img src="apps/site/public/images/locale-tr.webp" alt="The Roastery demo in Turkish" /></td>
+    <td width="50%"><b>Arabic</b>: right to left<br /><br />
+      <img src="apps/site/public/images/locale-ar.webp" alt="The Roastery demo in Arabic" /></td>
+  </tr>
+</table>
 
 ## Use it
 

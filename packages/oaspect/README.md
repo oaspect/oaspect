@@ -1,5 +1,7 @@
 # oaspect
 
+<a href="https://oaspect.dev/demo/roastery.html"><img src="https://oaspect.dev/images/hero-light.webp" alt="oaspect rendering an OpenAPI document: navigation, an operation and code samples" width="100%" /></a>
+
 Interactive API reference for OpenAPI 3.x and Swagger 2.0 documents (JSON or YAML).
 
 ```html
