@@ -3,13 +3,33 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocalized, useT } from "./i18n/context";
 import MethodBadge from "./method-badge";
+import { ChevronIcon } from "./icons";
 
-// Matches both the translated and the authored summary, so English search
-// terms keep working in another UI language.
+// Matches the translated and the authored text (so English search terms
+// keep working in another UI language), descriptions and parameter names.
+// Descriptions are searched as plain text; ":::lang" markers do not matter.
 function matches(operation, query, localized) {
-  return [localized(operation, "summary"), operation.summary, operation.path, operation.method, operation.operationId]
+  return [
+    localized(operation, "summary"),
+    operation.summary,
+    localized(operation, "description"),
+    operation.description,
+    operation.path,
+    operation.method,
+    operation.operationId,
+    tagNames(operation),
+    ...operation.parameters.map((parameter) => parameter.name),
+  ]
     .filter(Boolean)
-    .some((value) => value.toLowerCase().includes(query));
+    .some((value) => String(value).toLowerCase().includes(query));
+}
+
+const tagNames = (operation) => operation.tags.join(" ");
+
+function matchesSchema(item, query, localized) {
+  return [item.name, localized(item.schema, "description"), item.schema.description, item.schema.title]
+    .filter(Boolean)
+    .some((value) => String(value).toLowerCase().includes(query));
 }
 
 export default function Sidebar({ model, activeAnchor, searchRef, onNavigate, showModels = true }) {
@@ -21,19 +41,25 @@ export default function Sidebar({ model, activeAnchor, searchRef, onNavigate, sh
   const localized = useLocalized();
   const normalized = query.trim().toLowerCase();
 
-  const tags = useMemo(() => {
-    if (!normalized) return model.tags;
-    return model.tags
-      .map((tag) => ({ ...tag, operations: tag.operations.filter((op) => matches(op, normalized, localized)) }))
-      .filter((tag) => tag.operations.length > 0);
-  }, [model.tags, normalized, localized]);
-
-  const schemas = useMemo(
-    () => (normalized ? model.schemas.filter((item) => item.name.toLowerCase().includes(normalized)) : model.schemas),
-    [model.schemas, normalized],
+  // Webhooks show up as one more group after the tags.
+  const groups = useMemo(
+    () => (model.webhooks?.length ? [...model.tags, { name: "webhooks", label: t("webhooks.title"), anchor: "webhooks", operations: model.webhooks }] : model.tags),
+    [model.tags, model.webhooks, t],
   );
 
-  const activeTag = model.tags.find(
+  const tags = useMemo(() => {
+    if (!normalized) return groups;
+    return groups
+      .map((tag) => ({ ...tag, operations: tag.operations.filter((op) => matches(op, normalized, localized)) }))
+      .filter((tag) => tag.operations.length > 0);
+  }, [groups, normalized, localized]);
+
+  const schemas = useMemo(
+    () => (normalized ? model.schemas.filter((item) => matchesSchema(item, normalized, localized)) : model.schemas),
+    [model.schemas, normalized, localized],
+  );
+
+  const activeTag = groups.find(
     (tag) => tag.anchor === activeAnchor || tag.operations.some((op) => op.anchor === activeAnchor),
   )?.name;
   const inModels = activeAnchor?.startsWith("model/");
@@ -93,8 +119,10 @@ export default function Sidebar({ model, activeAnchor, searchRef, onNavigate, sh
                 aria-expanded={open}
                 className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-start text-sm font-medium hover:bg-muted"
               >
-                {localized(tag, "name")}
-                <span className={`text-[10px] text-muted-foreground transition ${open ? "rotate-90" : "rtl:-scale-x-100"}`}>▶</span>
+                {tag.label ?? localized(tag, "name")}
+                <span className={`text-muted-foreground transition ${open ? "rotate-90" : "rtl:-scale-x-100"}`}>
+                  <ChevronIcon />
+                </span>
               </button>
               {open && (
                 <div className="mb-2 ms-2 space-y-0.5 border-s border-border ps-2">
@@ -118,7 +146,9 @@ export default function Sidebar({ model, activeAnchor, searchRef, onNavigate, sh
               className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-start text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:bg-muted"
             >
               {t("models.title")} ({schemas.length})
-              <span className={`text-[10px] transition ${modelsOpen || normalized || inModels ? "rotate-90" : "rtl:-scale-x-100"}`}>▶</span>
+              <span className={`transition ${modelsOpen || normalized || inModels ? "rotate-90" : "rtl:-scale-x-100"}`}>
+                <ChevronIcon />
+              </span>
             </button>
             {(modelsOpen || normalized || inModels) && (
               <div className="ms-2 space-y-0.5 border-s border-border ps-2">

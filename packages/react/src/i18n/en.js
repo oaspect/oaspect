@@ -16,6 +16,8 @@ const messages = {
   "intro.groups": "Groups",
   "intro.models": "Models",
   "models.title": "Models",
+  "operation.callbacks": "Callbacks",
+  "operation.links": "Links",
   "operation.requestBody": "Request body",
   "operation.responses": "Responses",
   "params.cookie": "Cookie parameters",
@@ -42,8 +44,8 @@ const messages = {
   "source.title": "Source",
   "spec.fallback": "The live API document could not be reached; showing a fallback copy that may be out of date.",
   "spec.loadFailed": "Could not load spec: {error}",
-  "spec.unreadableFile": "{name} could not be read: {error}",
   "spec.loading": "Loading document…",
+  "spec.unreadableFile": "{name} could not be read: {error}",
   "tryIt.confirm.body": "A {method} request will be sent to {host}. Example values can overwrite or delete real records.",
   "tryIt.confirm.cancel": "Cancel",
   "tryIt.confirm.send": "Send anyway",
@@ -63,6 +65,9 @@ const messages = {
   "tryIt.sending": "Sending…",
   "tryIt.settingsHint": "Server and Bearer token are set in the Connection section.",
   "tryIt.waiting": "Waiting for response…",
+  "webhooks.hint": "Requests this API sends to your endpoint.",
+  "webhooks.payload": "Payload",
+  "webhooks.title": "Webhooks",
 };
 
 export default messages;

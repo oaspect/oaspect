@@ -1,14 +1,15 @@
 "use client";
 
 import { memo, useState } from "react";
-import { jsonMediaType, resolveSchema } from "@oaspect/core";
-import { CopyButton } from "./code-block";
+import { jsonMediaType, linkTarget, mediaExample, resolveSchema } from "@oaspect/core";
+import CodeBlock, { CopyButton } from "./code-block";
 import { useLocalized, useT } from "./i18n/context";
 import Markdown from "./markdown";
 import MethodBadge, { statusTone } from "./method-badge";
 import { RequestSample, ResponseSample } from "./samples";
 import SchemaTree, { FieldDetails } from "./schema-tree";
-import { useSpec } from "./spec-context";
+import { useModel, useSpec } from "./spec-context";
+import { ChevronIcon } from "./icons";
 
 // Titles are translation keys.
 const PARAM_GROUPS = [
@@ -83,12 +84,56 @@ function MediaSchema({ content }) {
   );
 }
 
+// Response links: where a value from this response can be used next.
+function Links({ links }) {
+  const t = useT();
+  const model = useModel();
+  const localized = useLocalized();
+
+  return (
+    <div>
+      <p className="pb-1 text-xs font-semibold text-muted-foreground">{t("operation.links")}</p>
+      {links.map((link) => {
+        const target = model ? linkTarget(model, link) : undefined;
+        const parameters = Object.entries(link.parameters);
+        return (
+          <div key={link.name} className="space-y-1 border-t border-border py-2 first:border-t-0">
+            <div className="flex flex-wrap items-baseline gap-2 text-sm">
+              <span className="font-mono font-semibold">{link.name}</span>
+              <span className="text-muted-foreground">→</span>
+              {target ? (
+                <a href={`#${target.anchor}`} className="text-primary underline underline-offset-2">
+                  {localized(target, "summary") || target.operationId || `${target.method.toUpperCase()} ${target.path}`}
+                </a>
+              ) : (
+                <code dir="ltr" className="font-mono text-xs text-muted-foreground">{link.operationId ?? link.operationRef}</code>
+              )}
+            </div>
+            <Markdown source={link.description} className="text-muted-foreground" />
+            {parameters.length > 0 && (
+              <dl dir="ltr" className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5 font-mono text-xs">
+                {parameters.map(([name, expression]) => (
+                  <div key={name} className="contents">
+                    <dt className="font-semibold">{name}</dt>
+                    <dd className="break-all text-muted-foreground">{typeof expression === "string" ? expression : JSON.stringify(expression)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ResponseRow({ response, defaultOpen }) {
   const localized = useLocalized();
   const [open, setOpen] = useState(defaultOpen);
   const hasBody = Object.keys(response.content).length > 0;
   const headers = Object.entries(response.headers);
-  const expandable = hasBody || headers.length > 0;
+  const links = response.links ?? [];
+  const expandable = hasBody || headers.length > 0 || links.length > 0;
 
   return (
     <div className="border-t border-border first:border-t-0">
@@ -98,7 +143,9 @@ function ResponseRow({ response, defaultOpen }) {
         onClick={() => setOpen(!open)}
         className="flex w-full items-baseline gap-3 py-3 text-start enabled:hover:text-primary"
       >
-        <span className={`w-4 text-[10px] transition ${expandable ? "" : "invisible"} ${open ? "rotate-90" : "rtl:-scale-x-100"}`}>▶</span>
+        <span className={`flex w-4 shrink-0 self-center transition ${expandable ? "" : "invisible"} ${open ? "rotate-90" : "rtl:-scale-x-100"}`}>
+          <ChevronIcon />
+        </span>
         <span className={`font-mono text-sm font-bold ${statusTone(response.status)}`}>{response.status}</span>
         <span dir="auto" className="text-sm text-muted-foreground">{localized(response, "description")}</span>
       </button>
@@ -116,15 +163,79 @@ function ResponseRow({ response, defaultOpen }) {
             </div>
           )}
           {hasBody && <MediaSchema content={response.content} />}
+          {links.length > 0 && <Links links={links} />}
         </div>
       )}
     </div>
   );
 }
 
+// Callback requests the API makes after this operation, per runtime expression.
+function Callback({ operation }) {
+  const [open, setOpen] = useState(false);
+  const localized = useLocalized();
+  const t = useT();
+
+  return (
+    <div className="border-t border-border first:border-t-0">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 py-3 text-start hover:text-primary"
+      >
+        <span className={`flex w-4 shrink-0 transition ${open ? "rotate-90" : "rtl:-scale-x-100"}`}>
+          <ChevronIcon />
+        </span>
+        <MethodBadge method={operation.method} size="sm" />
+        <code dir="ltr" className="min-w-0 truncate font-mono text-xs">{operation.path}</code>
+        <span dir="auto" className="truncate text-sm text-muted-foreground">{localized(operation, "summary")}</span>
+      </button>
+      {open && (
+        <div className="mb-4 ms-7 space-y-3">
+          <Markdown source={localized(operation, "description")} />
+          {operation.requestBody?.content && (
+            <div>
+              <p className="pb-1 text-xs font-semibold text-muted-foreground">{t("operation.requestBody")}</p>
+              <MediaSchema content={operation.requestBody.content} />
+            </div>
+          )}
+          {operation.responses.length > 0 && (
+            <div>
+              <p className="pb-1 text-xs font-semibold text-muted-foreground">{t("operation.responses")}</p>
+              {operation.responses.map((response) => (
+                <ResponseRow key={response.status} response={response} defaultOpen={false} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Webhooks: the payload the API sends, in place of request samples.
+function PayloadSample({ operation }) {
+  const spec = useSpec();
+  const t = useT();
+  const content = operation.requestBody?.content;
+  const type = jsonMediaType(content);
+  if (!type) return null;
+  const example = mediaExample(spec, content[type]);
+  if (example === undefined) return null;
+
+  return (
+    <CodeBlock
+      code={typeof example === "string" ? example : JSON.stringify(example, null, 2)}
+      toolbar={<span className="px-1 text-xs font-medium text-white/60">{t("webhooks.payload")}</span>}
+    />
+  );
+}
+
 function Operation({ operation, onTry }) {
   const t = useT();
   const localized = useLocalized();
+  const webhook = operation.kind === "webhook";
   return (
     <section id={operation.anchor} data-anchor className="border-b border-border py-14">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
@@ -175,11 +286,31 @@ function Operation({ operation, onTry }) {
               ))}
             </div>
           )}
+
+          {operation.callbacks?.length > 0 && (
+            <div>
+              <SectionTitle>{t("operation.callbacks")}</SectionTitle>
+              {operation.callbacks.map((callback) => (
+                <div key={callback.name}>
+                  <p className="pt-2 font-mono text-xs font-semibold text-muted-foreground">{callback.name}</p>
+                  {callback.operations.map((item) => (
+                    <Callback key={item.anchor} operation={item} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <aside className="min-w-0 space-y-4 xl:sticky xl:top-20 xl:self-start">
-          <RequestSample operation={operation} onTry={onTry ? () => onTry(operation) : null} />
-          <ResponseSample operation={operation} />
+          {webhook ? (
+            <PayloadSample operation={operation} />
+          ) : (
+            <>
+              <RequestSample operation={operation} onTry={onTry ? () => onTry(operation) : null} />
+              <ResponseSample operation={operation} />
+            </>
+          )}
         </aside>
       </div>
     </section>

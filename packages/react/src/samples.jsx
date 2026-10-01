@@ -6,6 +6,7 @@ import { useT } from "./i18n/context";
 import CodeBlock, { ToolbarTab } from "./code-block";
 import { statusTone } from "./method-badge";
 import { useSettings, useSpec } from "./spec-context";
+import { PlayIcon } from "./icons";
 
 // Compact <select> styled to sit in the dark code toolbar.
 function ToolbarSelect({ label, value, options, onChange }) {
@@ -72,9 +73,10 @@ export function RequestSample({ operation, onTry }) {
         <button
           type="button"
           onClick={onTry}
-          className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
         >
-          {t("tryIt.open")} ▶
+          {t("tryIt.open")}
+          <PlayIcon className="size-2.5 rtl:-scale-x-100" />
         </button>
         )
       }

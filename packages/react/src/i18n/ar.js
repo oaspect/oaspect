@@ -16,6 +16,8 @@ const messages = {
   "intro.groups": "المجموعات",
   "intro.models": "النماذج",
   "models.title": "النماذج",
+  "operation.callbacks": "الاستدعاءات الراجعة",
+  "operation.links": "الروابط",
   "operation.requestBody": "نص الطلب",
   "operation.responses": "الاستجابات",
   "params.cookie": "معاملات ملفات تعريف الارتباط",
@@ -42,8 +44,8 @@ const messages = {
   "source.title": "المصدر",
   "spec.fallback": "تعذّر الوصول إلى مستند الواجهة البرمجية المباشر؛ يتم عرض نسخة احتياطية وقد لا تكون محدّثة.",
   "spec.loadFailed": "تعذّر تحميل المواصفة: {error}",
-  "spec.unreadableFile": "تعذّرت قراءة {name}: {error}",
   "spec.loading": "جارٍ تحميل المستند…",
+  "spec.unreadableFile": "تعذّرت قراءة {name}: {error}",
   "tryIt.confirm.body": "سيُرسل طلب {method} إلى {host}. قد تستبدل القيم التجريبية سجلات حقيقية أو تحذفها.",
   "tryIt.confirm.cancel": "إلغاء",
   "tryIt.confirm.send": "أرسل على أي حال",
@@ -63,6 +65,9 @@ const messages = {
   "tryIt.sending": "جارٍ الإرسال…",
   "tryIt.settingsHint": "يتم ضبط الخادم ورمز Bearer من قسم الاتصال.",
   "tryIt.waiting": "في انتظار الاستجابة…",
+  "webhooks.hint": "طلبات ترسلها هذه الواجهة البرمجية إلى نقطة النهاية لديك.",
+  "webhooks.payload": "الحمولة",
+  "webhooks.title": "خطافات الويب",
 };
 
 export default messages;

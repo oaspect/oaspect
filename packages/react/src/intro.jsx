@@ -14,7 +14,8 @@ function downloadSpec(spec) {
 }
 
 export default function Intro({ spec, model }) {
-  const { servers, serverIndex, setServerIndex, customServer, setCustomServer, token, setToken } = useSettings();
+  const { servers, serverIndex, setServerIndex, customServer, setCustomServer, token, setToken, selectedServer, variableValues, setVariable } = useSettings();
+  const variables = Object.entries(selectedServer?.variables ?? {});
   const { info } = model;
   const t = useT();
   const localized = useLocalized();
@@ -85,6 +86,33 @@ export default function Intro({ spec, model }) {
               <option value={-1}>{t("connection.customServer")}</option>
             </select>
           </label>
+          {variables.map(([name, variable]) => (
+            <label key={name} className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] items-center gap-2">
+              <span className="truncate font-mono text-xs text-muted-foreground" title={variable.description ?? name}>
+                {`{${name}}`}
+              </span>
+              {variable.enum?.length ? (
+                <select
+                  value={variableValues[name] ?? variable.default ?? ""}
+                  onChange={(event) => setVariable(name, event.target.value)}
+                  dir="ltr"
+                  className="rounded-lg border border-border bg-background px-2 py-1 font-mono text-xs"
+                >
+                  {variable.enum.map((option) => (
+                    <option key={option}>{option}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={variableValues[name] ?? ""}
+                  placeholder={variable.default ?? ""}
+                  onChange={(event) => setVariable(name, event.target.value)}
+                  dir="ltr"
+                  className="rounded-lg border border-border bg-background px-2 py-1 font-mono text-xs outline-none focus:border-primary"
+                />
+              )}
+            </label>
+          ))}
           {serverIndex === -1 && (
             <input
               type="url"

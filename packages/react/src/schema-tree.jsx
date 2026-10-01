@@ -5,6 +5,7 @@ import { childrenOf, constraintsOf, modelAnchor, resolveSchema, typeLabel } from
 import { useLocalized, useT } from "./i18n/context";
 import Markdown from "./markdown";
 import { useSpec } from "./spec-context";
+import { ChevronIcon } from "./icons";
 
 // Chips hold technical values (patterns, dates, enums): always LTR and
 // isolated so an RTL UI does not reorder their characters.
@@ -99,7 +100,9 @@ function PropertyRow({ name, raw, required, depth, seen }) {
             aria-expanded={open}
             className="flex items-baseline gap-1 font-mono text-sm font-semibold hover:text-primary"
           >
-            <span className={`inline-block text-[10px] transition ${open ? "rotate-90" : "rtl:-scale-x-100"}`}>▶</span>
+            <span className={`inline-flex self-center transition ${open ? "rotate-90" : "rtl:-scale-x-100"}`}>
+              <ChevronIcon className="size-3" />
+            </span>
             {name}
           </button>
         ) : (

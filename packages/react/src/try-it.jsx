@@ -6,6 +6,7 @@ import { buildRequest, defaultBody, defaultValues, isMultipart } from "@oaspect/
 import CodeBlock, { CodeEditor } from "./code-block";
 import MethodBadge, { statusTone } from "./method-badge";
 import { useSettings, useSpec } from "./spec-context";
+import { CloseIcon } from "./icons";
 
 
 // Methods that never change server state; everything else asks first,
@@ -182,9 +183,9 @@ export default function TryIt({ operation, onClose }) {
             type="button"
             onClick={onClose}
             aria-label={t("dialog.close")}
-            className="rounded-lg px-2 py-1 text-lg leading-none text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            ×
+            <CloseIcon className="size-4" />
           </button>
         </header>
 

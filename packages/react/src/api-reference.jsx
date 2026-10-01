@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buildModel, loadSpecText, normalizeSpec } from "@oaspect/core";
+import { buildModel, loadSpecText, normalizeSpec, serverUrl } from "@oaspect/core";
 import { LocaleProvider, useAvailableLocales, useLocale, useLocalized, useSetLocale, useT } from "./i18n/context";
 import { LOCALE_NAMES, directionOf, mergeMessages } from "./i18n/index";
 import { createStorage } from "./storage";
@@ -10,8 +10,9 @@ import Markdown from "./markdown";
 import Models from "./models";
 import Operation from "./operation";
 import Sidebar from "./sidebar";
-import { SettingsContext, SpecContext } from "./spec-context";
+import { ModelContext, SettingsContext, SpecContext } from "./spec-context";
 import TryIt from "./try-it";
+import { MenuIcon, MoonIcon, SunIcon } from "./icons";
 
 // Header a spec endpoint can send to say it served a fallback copy, e.g.
 // when the live document was unreachable. The viewer then shows a notice.
@@ -63,10 +64,10 @@ function ThemeToggle({ theme, onChange }) {
       onClick={() => onChange(theme === "dark" ? "light" : "dark")}
       aria-label={t("header.theme")}
       title={t("header.theme")}
-      className="rounded-lg border border-border px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+      className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground"
     >
-      <span className="dark:hidden">☾</span>
-      <span className="hidden dark:inline">☀</span>
+      <MoonIcon className="size-4 dark:hidden" />
+      <SunIcon className="hidden size-4 dark:block" />
     </button>
   );
 }
@@ -201,6 +202,8 @@ function Viewer({
 
   const [serverIndex, setServerIndex] = useState(0);
   const [customServer, setCustomServer] = useState("");
+  // Server variable values per server index: { 0: { region: "us" } }.
+  const [serverVariables, setServerVariables] = useState({});
   const [token, setToken] = useState("");
   const [language, setLanguage] = useState(defaultSnippet);
   // null until mounted: the host's own data-theme (if any) applies meanwhile,
@@ -296,10 +299,17 @@ function Viewer({
 
   const settings = useMemo(() => {
     const servers = model?.servers ?? [];
-    const server = serverIndex === -1 ? { url: customServer } : servers[serverIndex] ?? servers[0];
+    const selected = serverIndex === -1 ? { url: customServer } : servers[serverIndex] ?? servers[0];
+    const variableValues = serverVariables[serverIndex] ?? {};
+    // Variables are resolved here so requests and samples see a plain URL.
+    const server = selected ? { url: serverUrl(selected, variableValues) } : undefined;
     return {
       servers,
       server,
+      selectedServer: selected,
+      variableValues,
+      setVariable: (name, value) =>
+        setServerVariables((current) => ({ ...current, [serverIndex]: { ...current[serverIndex], [name]: value } })),
       serverIndex,
       setServerIndex,
       customServer,
@@ -315,7 +325,7 @@ function Viewer({
     };
     // features is rebuilt each render from props; its fields are what matter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, serverIndex, customServer, token, language, proxyUrl, storage, features.tryIt]);
+  }, [model, serverIndex, customServer, serverVariables, token, language, proxyUrl, storage, features.tryIt]);
 
   // Scroll spy: the section crossing the band under the header is active.
   useEffect(() => {
@@ -354,6 +364,7 @@ function Viewer({
 
   return (
     <SpecContext.Provider value={spec}>
+      <ModelContext.Provider value={model}>
       <SettingsContext.Provider value={settings}>
         {/* .oaspect scopes the stylesheet and carries theme, direction and
             language; layout utilities live on the inner element because
@@ -365,9 +376,9 @@ function Viewer({
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-label={t("header.menu")}
-              className="rounded-lg border border-border px-2.5 py-1.5 text-sm lg:hidden"
+              className="rounded-lg border border-border p-2 lg:hidden"
             >
-              ☰
+              <MenuIcon className="size-4" />
             </button>
             <a href="#introduction" className="flex min-w-0 items-center gap-2">
               {logo ?? <span className="truncate text-sm font-semibold">{heading}</span>}
@@ -432,6 +443,15 @@ function Viewer({
                       ))}
                     </section>
                   ))}
+                  {model.webhooks.length > 0 && (
+                    <section id="webhooks" data-anchor className="pt-14">
+                      <h2 className="text-3xl font-bold tracking-tight">{t("webhooks.title")}</h2>
+                      <p className="mt-3 max-w-3xl text-sm text-muted-foreground">{t("webhooks.hint")}</p>
+                      {model.webhooks.map((operation) => (
+                        <Operation key={operation.anchor} operation={operation} onTry={null} />
+                      ))}
+                    </section>
+                  )}
                   {features.models && <Models schemas={model.schemas} />}
                 </div>
               </main>
@@ -442,6 +462,7 @@ function Viewer({
         </div>
         </div>
       </SettingsContext.Provider>
+      </ModelContext.Provider>
     </SpecContext.Provider>
   );
 }

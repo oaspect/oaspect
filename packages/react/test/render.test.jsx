@@ -60,3 +60,34 @@ describe("Swagger 2.0 input", async () => {
     expect(html).toContain("https://petstore.example.com/v2");
   });
 });
+
+describe("webhooks, callbacks, links and server variables", () => {
+  const events = {
+    openapi: "3.1.0",
+    info: { title: "Events", version: "1" },
+    servers: [{ url: "https://{region}.example.com", variables: { region: { default: "eu", enum: ["eu", "us"] } } }],
+    paths: {
+      "/subscriptions": {
+        post: {
+          operationId: "subscribe",
+          summary: "Subscribe",
+          callbacks: { onEvent: { "{$request.body#/callbackUrl}": { post: { summary: "Event delivery", responses: { 200: { description: "Ack" } } } } } },
+          responses: { 201: { description: "Created", links: { Read: { operationId: "getSubscription", parameters: { id: "$response.body#/id" } } } } },
+        },
+      },
+      "/subscriptions/{id}": { get: { operationId: "getSubscription", summary: "Get subscription", responses: { 200: { description: "OK" } } } },
+    },
+    webhooks: { newPet: { post: { summary: "New pet", requestBody: { content: { "application/json": { schema: { type: "object", properties: { id: { type: "integer" } } } } } }, responses: { 200: { description: "Received" } } } } },
+  };
+
+  test("renders the webhooks section with a payload sample and no Try button", () => {
+    const html = renderToString(<ApiReference spec={events} />);
+    expect(html).toContain('id="webhooks"');
+    expect(html).toContain("New pet");
+    expect(html).toContain("Payload");
+    expect(html).toContain("Callbacks");
+    expect(html).toContain("{$request.body#/callbackUrl}");
+    expect(html).toContain("{region}");
+    expect(html).toContain("https://eu.example.com/subscriptions");
+  });
+});

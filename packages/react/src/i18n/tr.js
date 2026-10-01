@@ -16,6 +16,8 @@ const messages = {
   "intro.groups": "Grup",
   "intro.models": "Model",
   "models.title": "Modeller",
+  "operation.callbacks": "Callback'ler",
+  "operation.links": "Bağlantılar",
   "operation.requestBody": "Request body",
   "operation.responses": "Yanıtlar",
   "params.cookie": "Cookie parametreleri",
@@ -42,8 +44,8 @@ const messages = {
   "source.title": "Kaynak",
   "spec.fallback": "Canlı API dokümanına ulaşılamadı; yedek kopya gösteriliyor ve güncel olmayabilir.",
   "spec.loadFailed": "Spec yüklenemedi: {error}",
-  "spec.unreadableFile": "{name} okunamadı: {error}",
   "spec.loading": "Doküman yükleniyor…",
+  "spec.unreadableFile": "{name} okunamadı: {error}",
   "tryIt.confirm.body": "{method} isteği {host} adresine gönderilecek. Örnek değerler gerçek kayıtların üzerine yazabilir ya da onları silebilir.",
   "tryIt.confirm.cancel": "Vazgeç",
   "tryIt.confirm.send": "Yine de gönder",
@@ -63,6 +65,9 @@ const messages = {
   "tryIt.sending": "Gönderiliyor…",
   "tryIt.settingsHint": "Sunucu ve Bearer token Bağlantı bölümünden ayarlanır.",
   "tryIt.waiting": "Yanıt bekleniyor…",
+  "webhooks.hint": "Bu API'nin sizin endpoint'inize gönderdiği istekler.",
+  "webhooks.payload": "Gövde",
+  "webhooks.title": "Webhook'lar",
 };
 
 export default messages;
