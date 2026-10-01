@@ -10,7 +10,7 @@
   Interactive API reference for OpenAPI documents: try requests in place, code in 30 clients, docs in any language.
   <br />
   <a href="https://oaspect.dev"><b>Website</b></a> ·
-  <a href="https://oaspect.dev/reference.html"><b>Guide</b></a> ·
+  <a href="https://oaspect.dev/docs/"><b>Docs</b></a> ·
   <a href="https://oaspect.dev/demo/roastery.html"><b>Live demo</b></a>
 </p>
 
@@ -166,6 +166,10 @@ When the live document cannot be reached, the fallback is served with
 | `storagePrefix` | `"oaspect"` | Prefix for persisted preferences |
 | `urlParam` | `"url"` | Query parameter that loads another spec URL; `null` disables |
 | `theme` | reader's choice | Force `"light"` or `"dark"` |
+| `lazy` | `"auto"` | Render sections near the viewport only; `"auto"` above 40 operations |
+
+Every option, the HTML attributes and the `Oaspect.init` handle are described in
+[Configuration](https://oaspect.dev/docs/configuration.html).
 
 A spec endpoint may answer with the header `x-oaspect-spec-source: fallback` to
 make the viewer show an "out of date copy" notice.
@@ -213,14 +217,12 @@ Türkçe metin
 | [`@oaspect/react`](packages/react) | The `<ApiReference>` React component and its stylesheet |
 | [`@oaspect/core`](packages/core) | Framework-free OpenAPI processing: parsing (JSON/YAML), Swagger 2.0 conversion, `$ref` resolution, examples, request building, code samples, Markdown, highlighting. TypeScript. |
 
-## Known limitations
+## Documentation
 
-- External `$ref`s (other files or URLs) are not resolved.
-- Security schemes are converted and shown in the document, but "Try" only
-  offers a Bearer token.
-- A few clients have no multipart encoder (wget, node:http, Python
-  http.client, java.net.http); their samples point to another client of the
-  same language. PHP cURL arrays cannot repeat a field name.
+Installation, every option, theming, localization, Try and its proxy, the
+CLI and the core API: **[oaspect.dev/docs](https://oaspect.dev/docs/)**
+(sources in [`apps/site/docs`](apps/site/docs)). Known limitations are listed
+in the [FAQ](https://oaspect.dev/docs/faq.html#limitations).
 
 ## Development
 
