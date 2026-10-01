@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useT } from "./i18n/context";
-import { buildRequest, defaultBody, defaultValues } from "@oaspect/core";
+import { buildRequest, defaultBody, defaultValues, isMultipart } from "@oaspect/core";
 import CodeBlock, { CodeEditor } from "./code-block";
 import MethodBadge, { statusTone } from "./method-badge";
 import { useSettings, useSpec } from "./spec-context";
@@ -20,13 +20,33 @@ const LOCATIONS = [
   ["cookie", "Cookie"],
 ];
 
+// FormData for multipart requests: text parts plus the chosen File objects
+// (aligned with request.form).
+function toFormData(form, files) {
+  const data = new FormData();
+  form.forEach((field, index) => {
+    if (field.file) data.append(field.name, files[index], field.file.name);
+    else data.append(field.name, field.value ?? "");
+  });
+  return data;
+}
+
+async function toBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
 // Sends the request straight from the browser (needs CORS on the API).
-async function sendDirect(request) {
+async function sendDirect(request, files) {
   const started = performance.now();
   const response = await fetch(request.url, {
     method: request.method,
     headers: request.headers,
-    body: request.body,
+    body: request.form ? toFormData(request.form, files) : request.body,
   });
   return {
     status: response.status,
@@ -38,11 +58,20 @@ async function sendDirect(request) {
 }
 
 // Relays the request through the host's proxy endpoint (see proxyUrl).
-async function sendViaProxy(proxyUrl, request) {
+// Multipart files travel base64-encoded inside the JSON payload.
+async function sendViaProxy(proxyUrl, request, files) {
+  const payload = { ...request };
+  if (request.form) {
+    payload.form = await Promise.all(
+      request.form.map(async (field, index) =>
+        field.file ? { name: field.name, file: { ...field.file, data: await toBase64(files[index]) } } : field,
+      ),
+    );
+  }
   const response = await fetch(proxyUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
+    body: JSON.stringify(payload),
   });
   const result = await response.json();
   if (result.error) throw new Error(result.error);
@@ -65,7 +94,10 @@ export default function TryIt({ operation, onClose }) {
   const dialog = useRef(null);
   const t = useT();
   const [values, setValues] = useState(() => defaultValues(spec, operation));
-  const [{ contentType, body }, setBody] = useState(() => defaultBody(spec, operation));
+  const [{ contentType, body, form = [] }, setBody] = useState(() => defaultBody(spec, operation));
+  // multipart: chosen File per form part index (file parts without one are left out).
+  const [chosen, setChosen] = useState({});
+  const multipart = isMultipart(contentType);
   const [state, setState] = useState({ status: "idle" });
   const [skipConfirm, setSkipConfirm] = useState(() => storage.get("skip-write-confirm", null, "session") === "1");
   // "proxy" relays through proxyUrl (no CORS needed); "direct" calls from the browser.
@@ -86,7 +118,16 @@ export default function TryIt({ operation, onClose }) {
     if (node && !node.open) node.showModal();
   }, []);
 
-  const request = buildRequest(operation, { server, values, body, contentType, headers: authHeaders });
+  const sent = form
+    .map((field, index) => ({ field, file: chosen[index] }))
+    .filter(({ field, file }) => !field.file || file)
+    .map(({ field, file }) => ({ field: file ? { name: field.name, file: { name: file.name, type: file.type || undefined } } : field, file }));
+  const request = buildRequest(operation, { server, values, body, form: sent.map((item) => item.field), contentType, headers: authHeaders });
+  const files = sent.map((item) => item.file ?? null);
+
+  function setFormValue(index, value) {
+    setBody((current) => ({ ...current, form: current.form.map((field, i) => (i === index ? { ...field, value } : field)) }));
+  }
 
   function setValue(location, name, value) {
     setValues((current) => ({ ...current, [location]: { ...current[location], [name]: value } }));
@@ -110,7 +151,7 @@ export default function TryIt({ operation, onClose }) {
     setState({ status: "loading" });
 
     try {
-      const result = mode === "proxy" ? await sendViaProxy(proxyUrl, request) : await sendDirect(request);
+      const result = mode === "proxy" ? await sendViaProxy(proxyUrl, request, files) : await sendDirect(request, files);
       setState({ ...result, code: result.status, status: "done" });
     } catch (error) {
       setState({ status: "error", message: error.message });
@@ -220,12 +261,43 @@ export default function TryIt({ operation, onClose }) {
               );
             })}
 
-            {contentType && (
+            {contentType && multipart && (
+              <fieldset className="space-y-2">
+                <legend className="mb-2 flex w-full items-center justify-between text-sm font-semibold">
+                  Body <span className="font-mono text-[11px] font-normal text-muted-foreground">{contentType}</span>
+                </legend>
+                {form.map((field, index) => (
+                  <label key={`${field.name}-${index}`} className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)] items-center gap-3">
+                    <span className="truncate font-mono text-xs" title={field.name}>
+                      {field.name}
+                      {field.file && <span className="ms-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">file</span>}
+                    </span>
+                    {field.file ? (
+                      <input
+                        type="file"
+                        onChange={(event) => setChosen((current) => ({ ...current, [index]: event.target.files?.[0] }))}
+                        className="text-xs file:me-2 file:rounded-md file:border file:border-border file:bg-background file:px-2 file:py-1 file:text-xs"
+                      />
+                    ) : (
+                      <input
+                        value={field.value ?? ""}
+                        onChange={(event) => setFormValue(index, event.target.value)}
+                        dir="ltr"
+                        className="rounded-md border border-border bg-background px-2 py-1 font-mono text-xs outline-none focus:border-primary"
+                      />
+                    )}
+                  </label>
+                ))}
+                <p className="text-xs text-muted-foreground">{t("tryIt.fileHint")}</p>
+              </fieldset>
+            )}
+
+            {contentType && !multipart && (
               <label className="block space-y-2">
                 <span className="flex items-center justify-between text-sm font-semibold">
                   Body <span className="font-mono text-[11px] font-normal text-muted-foreground">{contentType}</span>
                 </span>
-                <CodeEditor value={body} onChange={(value) => setBody({ contentType, body: value })} />
+                <CodeEditor value={body} onChange={(value) => setBody((current) => ({ ...current, body: value }))} />
               </label>
             )}
           </div>

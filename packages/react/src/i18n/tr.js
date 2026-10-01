@@ -51,6 +51,7 @@ const messages = {
   "tryIt.confirm.title": "Bu istek veriyi değiştirebilir",
   "tryIt.corsHint": "API bu origin'e CORS izni vermiyor olabilir; Proxy modunu deneyin.",
   "tryIt.failed": "İstek gönderilemedi: {message}",
+  "tryIt.fileHint": "Dosya seçilmeyen dosya alanları isteğe eklenmez.",
   "tryIt.idle": "İsteği göndermek için “Gönder”e basın.",
   "tryIt.mode.direct": "Doğrudan",
   "tryIt.mode.directHint": "Tarayıcıdan gönderir; API'nin CORS izni vermesi gerekir",

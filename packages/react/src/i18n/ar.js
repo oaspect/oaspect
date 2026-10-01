@@ -51,6 +51,7 @@ const messages = {
   "tryIt.confirm.title": "قد يغيّر هذا الطلب البيانات",
   "tryIt.corsHint": "قد لا تسمح الواجهة البرمجية بـ CORS لهذا المصدر؛ جرّب وضع الوكيل.",
   "tryIt.failed": "تعذّر إرسال الطلب: {message}",
+  "tryIt.fileHint": "لا تُضاف حقول الملفات التي لم يُختر لها ملف إلى الطلب.",
   "tryIt.idle": "اضغط «إرسال» لإرسال الطلب.",
   "tryIt.mode.direct": "مباشر",
   "tryIt.mode.directHint": "يُرسل من المتصفح؛ يجب أن تسمح الواجهة البرمجية بـ CORS",

@@ -51,6 +51,7 @@ const messages = {
   "tryIt.confirm.title": "This request may change data",
   "tryIt.corsHint": "The API may not allow CORS for this origin; try Proxy mode.",
   "tryIt.failed": "Request failed: {message}",
+  "tryIt.fileHint": "File fields without a chosen file are left out of the request.",
   "tryIt.idle": "Press “Send” to send the request.",
   "tryIt.mode.direct": "Direct",
   "tryIt.mode.directHint": "Sends from the browser; the API must allow CORS",
