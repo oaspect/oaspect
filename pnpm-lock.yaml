@@ -36,6 +36,9 @@ importers:
 
   apps/site:
     dependencies:
+      '@oaspect/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       oaspect:
         specifier: workspace:*
         version: link:../../packages/oaspect

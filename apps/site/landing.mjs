@@ -1,8 +1,8 @@
 // The oaspect.dev landing page. Screenshots come from public/images
 // (screenshots.mjs); every image has a light and a dark variant that follows
 // the reader's color scheme.
+import { BASE_CSS, FAVICON, escapeHtml, footer, header, icon } from "./shared.mjs";
 
-const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]);
 
 const shot = (name, alt, { width = 2880, height = 1800, eager = false } = {}) => `<picture>
           <source srcset="images/${name}-dark.webp" media="(prefers-color-scheme: dark)" />
@@ -16,23 +16,6 @@ const frame = (content, url) => `<div class="frame">
         <div class="frame-bar" aria-hidden="true"><i></i><i></i><i></i><span>${escapeHtml(url)}</span></div>
         ${content}
       </div>`;
-
-const ICONS = {
-  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
-  layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
-  shield: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
-  hook: '<path d="M18 8a6 6 0 1 1-12 0"/><path d="M12 14v7"/><circle cx="12" cy="8" r="2"/>',
-  server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>',
-  file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14l-2 2 2 2M15 14l2 2-2 2"/>',
-  check: '<path d="m5 12 5 5L20 7"/>',
-  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
-  github: '<path d="M9 19c-4 1.5-4-2-6-2.5m12 5v-3.5a3 3 0 0 0-.9-2.4c3-.3 6-1.4 6-6.5A5 5 0 0 0 19 5.6 4.7 4.7 0 0 0 19 2s-1.2-.3-3.8 1.4a13 13 0 0 0-6.4 0C6.2 1.7 5 2 5 2a4.7 4.7 0 0 0-.1 3.6A5 5 0 0 0 3.6 9c0 5 3 6.2 6 6.5a3 3 0 0 0-.9 2.4V22"/>',
-  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-};
-const icon = (name, size = 20) =>
-  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
-
-const LOGO = `<svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent-strong)"/><path d="M12 9c-2 0-3 1-3 3v2c0 1-1 2-2 2 1 0 2 1 2 2v2c0 2 1 3 3 3M20 9c2 0 3 1 3 3v2c0 1 1 2 2 2-1 0-2 1-2 2v2c0 2-1 3-3 3" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 
 const INSTALL = [
   ["HTML", `<span class="t">&lt;script</span> <span class="a">src</span>=<span class="s">"https://cdn.jsdelivr.net/npm/oaspect"</span>
@@ -110,39 +93,10 @@ export function landing({ version, demos }) {
   <meta property="og:description" content="Open-source OpenAPI reference: try requests in place, code in 30 clients, any language including RTL." />
   <meta property="og:image" content="https://oaspect.dev/images/hero-dark.webp" />
   <meta name="theme-color" content="#08090a" media="(prefers-color-scheme: dark)" />
-  <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(LOGO.replace("var(--accent-strong)", "#16a34a"))}" />
+  <link rel="icon" href="${FAVICON}" />
   <style>
-    :root {
-      color-scheme: light dark;
-      --bg: #ffffff; --bg-soft: #f5f7f5; --fg: #0b0f0c; --muted: #545c56; --border: #e3e7e3;
-      --accent: #15803d; --accent-strong: #16a34a; --accent-soft: rgb(22 163 74 / .1); --glow: rgb(22 163 74 / .18);
-      --code-bg: #0f1311; --code-fg: #e7ece8;
-      --shadow: 0 1px 2px rgb(0 0 0 / .04), 0 12px 40px -12px rgb(0 0 0 / .18);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #08090a; --bg-soft: #101312; --fg: #f3f5f3; --muted: #9ba39d; --border: #222725;
-        --accent: #4ade80; --accent-strong: #16a34a; --accent-soft: rgb(74 222 128 / .1); --glow: rgb(74 222 128 / .14);
-        --code-bg: #0c0f0d; --shadow: 0 1px 2px rgb(0 0 0 / .4), 0 24px 60px -16px rgb(0 0 0 / .7);
-      }
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin: 0; font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
-    a { color: inherit; }
-    img { display: block; max-width: 100%; height: auto; }
-    code, pre { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
-    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-    .wrap { width: min(72rem, 100% - 2rem); margin-inline: auto; }
-
-    header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(12px); background: color-mix(in oklab, var(--bg) 80%, transparent); border-bottom: 1px solid var(--border); }
-    header .wrap { display: flex; align-items: center; gap: 1.5rem; height: 4rem; }
-    .brand { display: flex; align-items: center; gap: .6rem; font-weight: 700; font-size: 1.15rem; text-decoration: none; letter-spacing: -.01em; }
-    .brand small { font: 500 .7rem/1 ui-monospace, monospace; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: .25rem .5rem; }
-    nav { margin-inline-start: auto; display: flex; align-items: center; gap: .25rem; }
-    nav a { text-decoration: none; color: var(--muted); font-size: .925rem; padding: .45rem .7rem; border-radius: .5rem; display: inline-flex; align-items: center; gap: .4rem; }
-    nav a:hover { color: var(--fg); background: var(--bg-soft); }
-    @media (max-width: 40rem) { .brand small, nav .wide { display: none; } .eyebrow .wide { display: none; } }
+${BASE_CSS}
+    @media (max-width: 40rem) { .eyebrow .wide { display: none; } }
 
     .hero { position: relative; padding: 5.5rem 0 0; text-align: center; overflow: hidden; }
     .hero::before { content: ""; position: absolute; inset: -20% -10% auto; height: 46rem; background: radial-gradient(50% 50% at 50% 40%, var(--glow), transparent 70%); pointer-events: none; }
@@ -222,32 +176,19 @@ export function landing({ version, demos }) {
     .cta { margin: 7rem auto 0; text-align: center; padding: 4rem 1.5rem; border-radius: 1.5rem; border: 1px solid var(--border); background: radial-gradient(60% 120% at 50% 0%, var(--glow), transparent 70%), var(--bg-soft); }
     .cta h2 { margin-top: 0; }
     .cta p { color: var(--muted); margin: 0 auto 2rem; max-width: 34rem; }
-    footer { margin-top: 5rem; border-top: 1px solid var(--border); padding: 2rem 0 3rem; color: var(--muted); font-size: .9rem; }
-    footer .wrap { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center; }
-    footer nav { margin-inline-start: auto; }
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <a class="brand" href="./">${LOGO} oaspect <small>v${escapeHtml(version)}</small></a>
-      <nav aria-label="Main">
-        <a href="reference.html">Docs</a>
-        <a class="wide" href="#demos">Demos</a>
-        <a class="wide" href="https://www.npmjs.com/package/oaspect">npm</a>
-        <a href="https://github.com/oaspect/oaspect">${icon("github", 18)} GitHub</a>
-      </nav>
-    </div>
-  </header>
+  ${header({ version })}
 
-  <main>
+  <main id="content">
     <div class="hero">
       <div class="wrap">
-        <span class="eyebrow"><b>Open source</b> MIT<span class="wide"> · OpenAPI 3.0, 3.1 and Swagger 2.0</span></span>
+        <span class="eyebrow"><b>Open source</b> MIT<span class="wide">· OpenAPI 3.0, 3.1 and Swagger 2.0</span></span>
         <h1>API references people can <em>actually try</em></h1>
         <p class="lead">oaspect turns your OpenAPI document into a fast three-column reference: live requests, code in 30 clients, schemas you can read, and docs in your users' language.</p>
         <div class="actions">
-          <a class="button primary" href="reference.html">Get started ${icon("arrow", 18)}</a>
+          <a class="button primary" href="docs/">Get started ${icon("arrow", 18)}</a>
           <a class="button" href="demo/roastery.html">Open the live demo</a>
         </div>
         <div class="install">
@@ -364,24 +305,14 @@ export function landing({ version, demos }) {
         <h2>Your API deserves docs people use</h2>
         <p>One script tag and your OpenAPI file. No account, no build, MIT licensed.</p>
         <div class="actions">
-          <a class="button primary" href="reference.html">Read the guide ${icon("arrow", 18)}</a>
+          <a class="button primary" href="docs/">Read the docs ${icon("arrow", 18)}</a>
           <a class="button" href="https://github.com/oaspect/oaspect">${icon("github", 18)} Star on GitHub</a>
         </div>
       </div>
     </div>
   </main>
 
-  <footer>
-    <div class="wrap">
-      <span>oaspect · MIT License</span>
-      <nav aria-label="Footer">
-        <a href="reference.html">Docs</a>
-        <a href="https://github.com/oaspect/oaspect">GitHub</a>
-        <a href="https://www.npmjs.com/package/oaspect">npm</a>
-        <a href="https://github.com/oaspect/oaspect/issues">Issues</a>
-      </nav>
-    </div>
-  </footer>
+  ${footer({})}
 
   <script>
     for (const tabs of document.querySelectorAll("[data-tabs]")) {

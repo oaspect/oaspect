@@ -1,11 +1,12 @@
 // Builds the oaspect site into dist/: the landing page (landing.mjs), the
-// oaspect reference (rendered by oaspect from specs/oaspect.yaml) and demo
+// docs (docs/*.md through docs.mjs), the server API reference (rendered by oaspect from specs/oaspect.yaml) and demo
 // pages, each a prerendered, self-contained file from the CLI. public/ holds
 // the screenshots (screenshots.mjs) and is copied as is.
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
+import { renderDocs } from "./docs.mjs";
 import { landing } from "./landing.mjs";
 
 const root = import.meta.dirname;
@@ -18,7 +19,7 @@ mkdirSync(join(dist, "demo"), { recursive: true });
 
 const build = (spec, out, ...args) => execFileSync(process.execPath, [cli, "build", join(root, "specs", spec), "-o", join(dist, out), ...args], { stdio: "inherit" });
 
-build("oaspect.yaml", "reference.html", "--title", "oaspect reference");
+build("oaspect.yaml", "reference.html", "--title", "oaspect server API");
 const demos = [
   ["roastery.yaml", "roastery.html", "Roastery", "OpenAPI 3.1 showcase: Turkish and Arabic, oneOf, uploads, webhooks"],
   ["bookstore.json", "bookstore.html", "Bookstore", "OpenAPI 3.0: schemas, allOf/oneOf, code samples"],
@@ -31,4 +32,6 @@ if (existsSync(resolve(root, "public"))) cpSync(resolve(root, "public"), dist, {
 
 const { version } = JSON.parse(readFileSync(require.resolve("oaspect/package.json"), "utf8"));
 writeFileSync(join(dist, "index.html"), landing({ version, demos }));
+mkdirSync(join(dist, "docs"), { recursive: true });
+for (const page of renderDocs({ dir: resolve(root, "docs"), version })) writeFileSync(join(dist, "docs", page.file), page.html);
 console.log(`Site built in ${dist}`);
