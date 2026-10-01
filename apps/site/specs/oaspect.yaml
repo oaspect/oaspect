@@ -1,0 +1,215 @@
+openapi: 3.1.0
+info:
+  title: oaspect
+  version: 0.1.0
+  description: |
+    :::lang en
+    Interactive API reference for OpenAPI documents. This page is rendered by
+    oaspect itself from an OpenAPI document: the guide below is its
+    `info.description`, and the **Server helpers** section documents the
+    request contract of `oaspect/server`.
+
+    ## Install
+
+    | Use | Install |
+    |---|---|
+    | Script tag | `<script src="https://cdn.jsdelivr.net/npm/oaspect" data-spec-url="/openapi.yaml"></script>` |
+    | React | `npm install @oaspect/react` |
+    | CLI | `npx oaspect build openapi.yaml -o docs.html` |
+    | Server helpers | `import { createProxyHandler, createSpecHandler } from "oaspect/server"` |
+
+    ## Configuration
+
+    The same options work for `Oaspect.init(target, options)` and as
+    `<ApiReference>` props.
+
+    | Option | Default | Description |
+    |---|---|---|
+    | `spec` / `specUrl` | — | Document object, or URL of a JSON/YAML document |
+    | `title`, `logo` | `info.title` | Header branding |
+    | `locale`, `defaultLocale`, `onLocaleChange` | `"en"` | UI language |
+    | `messages` | — | Override UI strings or add languages |
+    | `proxyUrl` | `null` | Endpoint relaying "Try" requests (see below) |
+    | `features` | all on | `sourceMenu`, `languageSwitcher`, `themeToggle`, `tryIt`, `models` |
+    | `defaultSnippet` | `"shell:curl"` | Initial code sample |
+    | `storagePrefix` | `"oaspect"` | Prefix for saved preferences |
+    | `urlParam` | `"url"` | Query parameter loading another spec URL |
+    | `theme` | reader's choice | `"light"` or `"dark"` |
+    | `lazy` | `"auto"` | Render sections near the viewport only (above 40 operations) |
+
+    ## Supported documents
+
+    - OpenAPI 3.0 and 3.1, Swagger 2.0 (converted on load), JSON or YAML
+    - External `$ref`s to other files and URLs
+    - Webhooks, callbacks, links, server variables, security schemes
+
+    ## Translating your documentation
+
+    Short fields use the `x-i18n` extension; Markdown fields can hold
+    `:::lang` blocks, as this page does (switch the language in the header).
+    :::
+
+    :::lang tr
+    OpenAPI dokümanları için etkileşimli API referansı. Bu sayfayı oaspect'in
+    kendisi bir OpenAPI dokümanından çiziyor: aşağıdaki kılavuz dokümanın
+    `info.description` alanı, **Sunucu yardımcıları** bölümü de
+    `oaspect/server`'ın istek sözleşmesi.
+
+    ## Kurulum
+
+    | Kullanım | Kurulum |
+    |---|---|
+    | Script etiketi | `<script src="https://cdn.jsdelivr.net/npm/oaspect" data-spec-url="/openapi.yaml"></script>` |
+    | React | `npm install @oaspect/react` |
+    | CLI | `npx oaspect build openapi.yaml -o docs.html` |
+    | Sunucu yardımcıları | `import { createProxyHandler, createSpecHandler } from "oaspect/server"` |
+
+    ## Ayarlar
+
+    Aynı seçenekler hem `Oaspect.init(hedef, seçenekler)` hem de
+    `<ApiReference>` prop'ları olarak çalışır.
+
+    | Seçenek | Varsayılan | Açıklama |
+    |---|---|---|
+    | `spec` / `specUrl` | — | Doküman nesnesi ya da JSON/YAML dokümanının adresi |
+    | `title`, `logo` | `info.title` | Başlıktaki marka |
+    | `locale`, `defaultLocale`, `onLocaleChange` | `"en"` | Arayüz dili |
+    | `messages` | — | Arayüz metinlerini değiştirme ya da dil ekleme |
+    | `proxyUrl` | `null` | "Dene" isteklerini aktaran endpoint (aşağıya bakın) |
+    | `features` | hepsi açık | `sourceMenu`, `languageSwitcher`, `themeToggle`, `tryIt`, `models` |
+    | `defaultSnippet` | `"shell:curl"` | İlk gösterilen kod örneği |
+    | `storagePrefix` | `"oaspect"` | Kaydedilen tercihlerin ön eki |
+    | `urlParam` | `"url"` | Başka bir spec adresi yükleyen query parametresi |
+    | `theme` | okuyucunun seçimi | `"light"` ya da `"dark"` |
+    | `lazy` | `"auto"` | Bölümleri yalnızca ekrana yaklaşınca çizer (40 endpoint üzerinde) |
+
+    ## Desteklenen dokümanlar
+
+    - OpenAPI 3.0 ve 3.1, Swagger 2.0 (yüklenirken dönüştürülür), JSON ya da YAML
+    - Başka dosya ve adreslere verilen harici `$ref`'ler
+    - Webhook'lar, callback'ler, link'ler, sunucu değişkenleri, güvenlik şemaları
+
+    ## Dokümanınızı çevirmek
+
+    Kısa alanlar `x-i18n` uzantısını, Markdown alanları `:::lang` bloklarını
+    kullanır; bu sayfa da öyle (başlıktan dili değiştirin).
+    :::
+servers:
+  - url: https://docs.example.com
+    description: Your server, wherever the handlers are mounted
+tags:
+  - name: Server helpers
+    description: Web-standard `Request` → `Response` handlers from `oaspect/server`.
+    x-i18n:
+      tr:
+        name: Sunucu yardımcıları
+        description: "`oaspect/server` paketindeki Web standart `Request` → `Response` handler'ları."
+paths:
+  /proxy:
+    post:
+      tags: [Server helpers]
+      operationId: proxy
+      summary: Relay a "Try" request
+      x-i18n:
+        tr:
+          summary: Bir "Dene" isteğini aktar
+          description: Viewer'ın `proxyUrl`'ine gönderdiği istek. `createProxyHandler({ allowedHosts })` bu isteği sunucudan yollar ve yanıtı döner.
+      description: What the viewer posts to `proxyUrl`. `createProxyHandler({ allowedHosts })` sends the request from the server and returns the response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProxyRequest" }
+            example:
+              method: GET
+              url: https://api.example.com/pets?limit=10
+              headers: { Authorization: Bearer token }
+      responses:
+        "200":
+          description: The upstream response, whatever its status.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProxyResponse" }
+        "400":
+          description: Malformed payload, URL or protocol.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: The target host is not in `allowedHosts`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: The target could not be reached.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /openapi:
+    get:
+      tags: [Server helpers]
+      operationId: spec
+      summary: Serve the OpenAPI document
+      x-i18n:
+        tr:
+          summary: OpenAPI dokümanını sun
+          description: "`createSpecHandler({ url, fallback })`: canlı dokümanı sunucudan çeker ve önbelleğe alır; ulaşılamazsa yedeği sunar."
+      description: "`createSpecHandler({ url, fallback })`: fetches the live document server-side and caches it; serves the fallback when it cannot be reached."
+      responses:
+        "200":
+          description: The document (JSON or YAML).
+          headers:
+            x-oaspect-spec-source:
+              description: "`remote`, `fallback` (the viewer shows an out-of-date notice) or `static`."
+              schema: { type: string, enum: [remote, fallback, static] }
+          content:
+            application/json:
+              schema: { type: object }
+        "502":
+          description: The live document failed and there is no fallback.
+components:
+  schemas:
+    ProxyRequest:
+      type: object
+      required: [url]
+      properties:
+        method: { type: string, default: GET, example: POST }
+        url: { type: string, format: uri }
+        headers:
+          type: object
+          additionalProperties: { type: string }
+        body: { type: string, description: Text body (JSON, form-urlencoded…). }
+        form:
+          type: array
+          description: multipart/form-data parts; files are base64-encoded.
+          items: { $ref: "#/components/schemas/FormPart" }
+    FormPart:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        value: { type: string }
+        file:
+          type: object
+          properties:
+            name: { type: string }
+            type: { type: string }
+            data: { type: string, format: byte }
+    ProxyResponse:
+      type: object
+      properties:
+        status: { type: integer, example: 200 }
+        statusText: { type: string, example: OK }
+        headers:
+          type: array
+          items:
+            type: array
+            items: { type: string }
+            minItems: 2
+            maxItems: 2
+        body: { type: string }
+        duration: { type: integer, description: Milliseconds. }
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: api.internal is not an allowed host. }

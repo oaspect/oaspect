@@ -1,0 +1,11 @@
+{
+  "name": "@oaspect/site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "oaspect": "workspace:*"
+  }
+}
