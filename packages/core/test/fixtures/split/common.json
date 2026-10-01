@@ -1,0 +1,1 @@
+{ "components": { "parameters": { "Limit": { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } } } } }

@@ -1,0 +1,9 @@
+Pet:
+  type: object
+  properties:
+    name: { type: string }
+    tag: { $ref: "#/Tag" }
+    owner: { $ref: "./owner.yaml" }
+Tag:
+  type: string
+  enum: [cat, dog]

@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info: { title: Split API, version: "1" }
+paths:
+  /pets:
+    get:
+      summary: List pets
+      parameters:
+        - $ref: "./common.json#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "./schemas/pet.yaml#/Pet" }
+  /owners/{id}:
+    get:
+      summary: Get owner
+      responses:
+        "200":
+          description: Owner
+          content:
+            application/json:
+              schema: { $ref: "schemas/owner.yaml" }
+components:
+  schemas:
+    Local: { type: string }

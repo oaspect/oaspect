@@ -3,6 +3,7 @@
 
 import { parse as parseYaml } from "yaml";
 import { convertSwagger2 } from "./convert";
+import { resolveExternalRefs, type ExternalRefOptions } from "./external";
 import type { OpenAPIDocument } from "./types";
 
 /** Parses JSON, falling back to YAML. Throws with a readable message. */
@@ -37,4 +38,14 @@ export function loadSpecText(text: string): OpenAPIDocument {
   const doc = parseSpec(text);
   if (!isOpenApiDocument(doc)) throw new Error('Not an OpenAPI document (missing "openapi"/"swagger" or "paths").');
   return normalizeSpec(doc);
+}
+
+/**
+ * loadSpecText + external $ref resolution. Without `read`, external refs are
+ * left as they are (the viewer shows them as unresolved).
+ */
+export async function loadSpec(text: string, options?: Partial<ExternalRefOptions>): Promise<OpenAPIDocument> {
+  const doc = loadSpecText(text);
+  if (!options?.read || !options.baseUrl) return doc;
+  return resolveExternalRefs(doc, options as ExternalRefOptions);
 }
