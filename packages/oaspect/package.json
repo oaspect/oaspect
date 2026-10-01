@@ -1,6 +1,6 @@
 {
   "name": "oaspect",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Interactive API reference for OpenAPI documents: one script tag, a web component, a CLI and server helpers.",
   "license": "MIT",
   "homepage": "https://oaspect.dev",
