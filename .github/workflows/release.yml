@@ -32,8 +32,9 @@ jobs:
           cache: pnpm
 
       # Trusted publishing (OIDC) needs npm 11.5.1+; pnpm publishes through npm.
+      # Not 12: it rejects the flags pnpm passes on (--git-checks).
       - name: Update npm
-        run: npm install -g npm@latest
+        run: npm install -g npm@^11.5.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
