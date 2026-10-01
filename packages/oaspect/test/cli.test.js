@@ -80,3 +80,14 @@ describe("YAML and Swagger 2.0 input", () => {
     expect(html).not.toContain('"swagger":"2.0"');
   });
 });
+
+describe("external $refs", () => {
+  test("build inlines documents referenced from other files", () => {
+    const out = join(mkdtempSync(join(tmpdir(), "oaspect-cli-")), "split.html");
+    run("build", new URL("../../core/test/fixtures/split/main.yaml", import.meta.url).pathname, "-o", out);
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('"x-oaspect-external"');
+    expect(html).toContain("#/components/x-oaspect-external/Pet");
+    expect(html).not.toContain("./schemas/pet.yaml");
+  });
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { applySecurity, buildModel, loadSpecText, normalizeSpec, securityRequirements, serverUrl } from "@oaspect/core";
+import { applySecurity, buildModel, loadSpec, loadSpecText, normalizeSpec, securityRequirements, serverUrl } from "@oaspect/core";
 import { LocaleProvider, useAvailableLocales, useLocale, useLocalized, useSetLocale, useT } from "./i18n/context";
 import { LOCALE_NAMES, directionOf, mergeMessages } from "./i18n/index";
 import { createStorage } from "./storage";
@@ -153,6 +153,13 @@ function SourceMenu({ source, defaultLabel, onUrl, onFile, onDefault }) {
   );
 }
 
+// Loads a referenced document for external $refs.
+async function readText(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${url} → HTTP ${response.status}`);
+  return response.text();
+}
+
 function systemTheme() {
   try {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -269,9 +276,10 @@ function Viewer({
         if (!response.ok) throw new Error(`${url} → HTTP ${response.status}`);
         return { text: await response.text(), fallback: response.headers.get(SPEC_SOURCE_HEADER) === "fallback" };
       })
-      .then(({ text, fallback }) => {
-        // JSON or YAML; Swagger 2.0 is converted to OpenAPI 3.
-        const json = loadSpecText(text);
+      .then(async ({ text, fallback }) => {
+        // JSON or YAML; Swagger 2.0 is converted to OpenAPI 3; external
+        // $refs resolve relative to the document's URL.
+        const json = await loadSpec(text, { baseUrl: new URL(url, window.location.href).href, read: readText });
         if (!cancelled) {
           setSpec(json);
           setUsingFallback(fallback);
