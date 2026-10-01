@@ -358,13 +358,11 @@ function Viewer({
   return (
     <SpecContext.Provider value={spec}>
       <SettingsContext.Provider value={settings}>
-        <div
-          ref={rootRef}
-          className="oaspect min-h-dvh bg-background text-foreground"
-          data-theme={theme ?? undefined}
-          dir={directionOf(locale)}
-          lang={locale}
-        >
+        {/* .oaspect scopes the stylesheet and carries theme, direction and
+            language; layout utilities live on the inner element because
+            scoped selectors only match descendants. */}
+        <div ref={rootRef} className="oaspect" data-theme={theme ?? undefined} dir={directionOf(locale)} lang={locale}>
+        <div className="min-h-dvh bg-background text-foreground">
           <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur">
             <button
               type="button"
@@ -444,6 +442,7 @@ function Viewer({
           )}
 
           {tryOperation && <TryIt key={tryOperation.anchor} operation={tryOperation} onClose={() => setTryOperation(null)} />}
+        </div>
         </div>
       </SettingsContext.Provider>
     </SpecContext.Provider>

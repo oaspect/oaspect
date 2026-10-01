@@ -14,11 +14,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./styles.css": "./styles.css"
+    "./styles.css": "./dist/oaspect.css",
+    "./tailwind.css": "./tailwind.css"
   },
   "files": [
     "dist",
-    "styles.css"
+    "tailwind.css"
   ],
   "keywords": [
     "openapi",
@@ -28,7 +29,7 @@
     "react"
   ],
   "scripts": {
-    "build": "tsup && node scripts/fix-extensions.mjs && cp src/index.d.ts dist/index.d.ts",
+    "build": "tsup && node scripts/fix-extensions.mjs && node scripts/build-css.mjs && cp src/index.d.ts dist/index.d.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p .",
     "lint": "tsc --noEmit -p ."
@@ -41,9 +42,12 @@
     "react-dom": ">=18"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "@types/react": "^19.3.0",
+    "postcss": "^8.5.28",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "tailwindcss": "^4.3.3",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"

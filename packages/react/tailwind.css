@@ -1,0 +1,21 @@
+/*
+ * Optional Tailwind CSS v4 bridge for hosts that render their own markup
+ * inside the viewer (e.g. a `logo`): exposes the viewer's colors as Tailwind
+ * colors and its theme as the `dark:` variant. Not needed for the viewer
+ * itself, which ships with dist/oaspect.css.
+ *
+ *   @import "tailwindcss";
+ *   @import "@oaspect/react/tailwind.css";
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --color-oaspect-background: var(--oaspect-background);
+  --color-oaspect-foreground: var(--oaspect-foreground);
+  --color-oaspect-card: var(--oaspect-card);
+  --color-oaspect-muted: var(--oaspect-muted);
+  --color-oaspect-border: var(--oaspect-border);
+  --color-oaspect-primary: var(--oaspect-primary);
+  --color-oaspect-muted-foreground: var(--oaspect-muted-foreground);
+}

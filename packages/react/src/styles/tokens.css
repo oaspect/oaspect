@@ -1,15 +1,10 @@
 /*
- * @oaspect/react styles — a Tailwind CSS v4 fragment.
+ * Viewer design tokens, compiled into dist/oaspect.css by
+ * scripts/build-css.mjs together with the Tailwind utilities the components
+ * use.
  *
- * Import it after Tailwind and let Tailwind scan the package:
- *
- *   @import "tailwindcss";
- *   @import "@oaspect/react/styles.css";
- *   @source "../node_modules/@oaspect/react/dist";
- *
- * Colors are CSS variables on .oaspect (the component root); override them
- * there to theme the viewer. A prebuilt, prefixed stylesheet that works
- * without Tailwind is planned.
+ * Colors are CSS variables on .oaspect (the component root); override them on
+ * .oaspect (or .oaspect[data-theme="dark"]) to theme the viewer.
  */
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -102,5 +97,24 @@
 }
 .oaspect .syntax-comment {
   color: var(--oaspect-syntax-comment);
+  font-style: italic;
+}
+
+/*
+ * Host element rules such as `h2 { color: purple }` would still reach
+ * elements that carry no color utility of their own. Reset the inherited
+ * text properties preflight leaves alone; :where() keeps this at the scope's
+ * specificity, so any utility on the element still wins.
+ */
+:where(h1, h2, h3, h4, h5, h6, p, a, span, li, ol, ul, dl, dt, dd, label, small, strong, em, code, pre, kbd, blockquote, table, th, td, summary, legend, del) {
+  color: inherit;
+  font-style: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-shadow: inherit;
+  text-indent: 0;
+}
+
+:where(em) {
   font-style: italic;
 }

@@ -55,6 +55,19 @@ export declare function ApiReference(props: ApiReferenceProps): ReactNode;
 /** Response header a spec endpoint sets to "fallback" when it served a fallback copy. */
 export declare const SPEC_SOURCE_HEADER: "x-oaspect-spec-source";
 
+export interface LogoProps {
+  /** Logo image URL (light theme, or both themes when `dark` is omitted). */
+  light: string;
+  /** Logo image URL for the dark theme. */
+  dark?: string;
+  alt?: string;
+  /** Text shown next to the logo on wider screens, e.g. "API Docs". */
+  label?: string;
+}
+
+/** Header logo with an optional dark-theme variant; pass it as `logo`. */
+export declare function Logo(props: LogoProps): ReactNode;
+
 export declare const BUILT_IN_MESSAGES: Messages;
 export declare const LOCALE_NAMES: Record<string, string>;
 export declare function directionOf(locale: string): "ltr" | "rtl";

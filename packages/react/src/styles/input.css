@@ -1,0 +1,5 @@
+/* Build input for dist/oaspect.css (see scripts/build-css.mjs). */
+@import "tailwindcss" source(none);
+@import "./tokens.css";
+
+@source "../";

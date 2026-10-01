@@ -37,3 +37,14 @@ describe("ApiReference (server render)", () => {
     expect(html).toContain('alt="ACME"');
   });
 });
+
+describe("Logo", async () => {
+  const { Logo } = await import("../src/index");
+
+  test("renders light and dark variants with a label", () => {
+    const html = renderToString(<ApiReference spec={spec} logo={<Logo light="/l.svg" dark="/d.svg" alt="ACME" label="API Docs" />} />);
+    expect(html).toContain('src="/l.svg"');
+    expect(html).toContain('src="/d.svg"');
+    expect(html).toContain("API Docs");
+  });
+});
