@@ -1,3 +1,4 @@
+import { MULTIPART_BUILDERS } from "./multipart";
 import type { HttpRequest, SnippetLanguage } from "./types";
 
 // Code sample generators, grouped by language and client library. Each
@@ -571,7 +572,7 @@ function rawHttp({ method, url, headers, body }: HttpRequest) {
 // ---------------------------------------------------------------------------
 
 // `highlight` is the tokenizer language in src/lib/highlight.js.
-export const SNIPPET_LANGUAGES: SnippetLanguage[] = [
+const LANGUAGES: SnippetLanguage[] = [
   {
     key: "shell",
     label: "Shell",
@@ -656,6 +657,15 @@ export const SNIPPET_LANGUAGES: SnippetLanguage[] = [
   },
   { key: "http", label: "HTTP", highlight: "http", clients: [{ key: "raw", label: "HTTP/1.1", build: rawHttp }] },
 ];
+
+// Requests with multipart parts (HttpRequest.form) use the multipart builders.
+export const SNIPPET_LANGUAGES: SnippetLanguage[] = LANGUAGES.map((language) => ({
+  ...language,
+  clients: language.clients.map((client) => {
+    const multipart = MULTIPART_BUILDERS[`${language.key}:${client.key}`];
+    return { ...client, build: (request: HttpRequest) => (request.form && multipart ? multipart(request) : client.build(request)) };
+  }),
+}));
 
 // Selection is stored as "language:client" (e.g. "python:httpx").
 export function resolveSnippet(selection: unknown): { language: SnippetLanguage; client: SnippetLanguage["clients"][number]; selection: string } {

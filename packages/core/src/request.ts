@@ -1,6 +1,7 @@
 import { mediaExample, exampleFromSchema } from "./example";
 import { serverUrl } from "./model";
-import type { HttpRequest, OpenAPIObject, Operation, ParameterValues, ServerObject } from "./types";
+import { resolveSchema } from "./schema";
+import type { FormField, HttpRequest, OpenAPIObject, Operation, ParameterValues, ServerObject } from "./types";
 
 export function jsonMediaType(content: Record<string, unknown> = {}): string | undefined {
   const types = Object.keys(content);
@@ -28,10 +29,50 @@ export function defaultValues(spec: OpenAPIObject, operation: Operation): Parame
   return values;
 }
 
-export function defaultBody(spec: OpenAPIObject, operation: Operation): { contentType: string | null; body: string } {
+export interface DefaultBody {
+  contentType: string | null;
+  /** Text body for JSON and other text media types. */
+  body: string;
+  /** Parts for multipart/form-data. */
+  form?: FormField[];
+}
+
+export const isMultipart = (contentType?: string | null) => /^multipart\/form-data/i.test(contentType ?? "");
+
+const isBinary = (schema: OpenAPIObject) =>
+  schema.type === "string" && (schema.format === "binary" || schema.format === "base64" || Boolean(schema.contentMediaType));
+
+/**
+ * Parts for a multipart/form-data body from its schema: binary properties
+ * become file parts, everything else a text part with an example value.
+ */
+export function defaultForm(spec: OpenAPIObject, media: OpenAPIObject | undefined): FormField[] {
+  const { schema } = resolveSchema(spec, media?.schema ?? {});
+  const example = mediaExample(spec, media) ?? {};
+  const fields: FormField[] = [];
+
+  for (const [name, raw] of Object.entries<OpenAPIObject>(schema.properties ?? {})) {
+    const property = resolveSchema(spec, raw).schema;
+    const items = property.type === "array" && property.items ? resolveSchema(spec, property.items).schema : null;
+    if (isBinary(property) || (items && isBinary(items))) {
+      fields.push({ name, file: { name: `${name}.bin`, type: media?.encoding?.[name]?.contentType } });
+      continue;
+    }
+    const value = (example as Record<string, unknown>)[name];
+    for (const entry of Array.isArray(value) ? value : [value]) {
+      if (entry === undefined || entry === null) continue;
+      fields.push({ name, value: typeof entry === "object" ? JSON.stringify(entry) : String(entry) });
+    }
+  }
+  return fields;
+}
+
+export function defaultBody(spec: OpenAPIObject, operation: Operation): DefaultBody {
   const content = operation.requestBody?.content;
   const type = jsonMediaType(content);
   if (!type) return { contentType: null, body: "" };
+
+  if (isMultipart(type)) return { contentType: type, body: "", form: defaultForm(spec, content[type]) };
 
   const example = mediaExample(spec, content[type]);
   if (example === undefined) return { contentType: type, body: "" };
@@ -57,13 +98,15 @@ export interface BuildRequestOptions {
   server?: ServerObject;
   values: Partial<ParameterValues>;
   body?: string;
+  /** multipart/form-data parts; used instead of `body` when given. */
+  form?: FormField[];
   contentType?: string | null;
   headers?: Record<string, string>;
 }
 
 export function buildRequest(
   operation: Pick<Operation, "method" | "path">,
-  { server, values, body, contentType, headers = {} }: BuildRequestOptions,
+  { server, values, body, form, contentType, headers = {} }: BuildRequestOptions,
 ): HttpRequest {
   const base = (server ? serverUrl(server) : "").replace(/\/+$/, "");
   const path = operation.path.replace(/\{([^}]+)\}/g, (match, key) => {
@@ -87,13 +130,17 @@ export function buildRequest(
     .join("; ");
   if (cookies) allHeaders.Cookie = cookies;
 
-  const hasBody = Boolean(body) && !["get", "head"].includes(operation.method);
+  const canHaveBody = !["get", "head"].includes(operation.method);
+  const multipart = canHaveBody && Boolean(form?.length) && isMultipart(contentType);
+  const hasBody = !multipart && canHaveBody && Boolean(body);
   if (hasBody && contentType) allHeaders["Content-Type"] = contentType;
 
-  return {
+  const request: HttpRequest = {
     method: operation.method.toUpperCase(),
     url: `${base}${path}${search ? `?${search.replace(/%5B/g, "[").replace(/%5D/g, "]")}` : ""}`,
     headers: allHeaders,
     body: hasBody ? body : undefined,
   };
+  if (multipart) request.form = form;
+  return request;
 }

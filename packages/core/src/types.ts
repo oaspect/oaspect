@@ -95,12 +95,27 @@ export interface ParameterValues {
   cookie: Record<string, string>;
 }
 
+/** One part of a multipart/form-data body: a text value or a file. */
+export interface FormField {
+  name: string;
+  /** Text value (ignored for files). */
+  value?: string;
+  /** Present for file parts; `name` is the file name shown in samples. */
+  file?: { name: string; type?: string };
+}
+
 /** A concrete HTTP request, as produced by buildRequest(). */
 export interface HttpRequest {
   method: string;
   url: string;
   headers: Record<string, string>;
+  /** Text body (JSON, form-urlencoded…). */
   body?: string;
+  /**
+   * multipart/form-data parts. Set instead of `body`; there is no
+   * Content-Type header because clients add it with the boundary.
+   */
+  form?: FormField[];
 }
 
 export interface SnippetClient {
