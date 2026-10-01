@@ -26,7 +26,8 @@
     "src/serve.js",
     "src/server.js",
     "src/spec.js",
-    "src/server.d.ts"
+    "src/server.d.ts",
+    "README.md"
   ],
   "keywords": [
     "openapi",

@@ -19,7 +19,8 @@
   },
   "files": [
     "dist",
-    "tailwind.css"
+    "tailwind.css",
+    "README.md"
   ],
   "keywords": [
     "openapi",
