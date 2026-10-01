@@ -34,10 +34,22 @@ export function defaultBody(spec: OpenAPIObject, operation: Operation): { conten
   if (!type) return { contentType: null, body: "" };
 
   const example = mediaExample(spec, content[type]);
-  return {
-    contentType: type,
-    body: example === undefined ? "" : JSON.stringify(example, null, 2),
-  };
+  if (example === undefined) return { contentType: type, body: "" };
+  return { contentType: type, body: /x-www-form-urlencoded/i.test(type) ? formEncode(example) : JSON.stringify(example, null, 2) };
+}
+
+// application/x-www-form-urlencoded body from an example object: arrays
+// repeat the key, nested objects are sent as JSON text.
+export function formEncode(value: unknown): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  const params = new URLSearchParams();
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    for (const entry of Array.isArray(item) ? item : [item]) {
+      if (entry === undefined || entry === null) continue;
+      params.append(key, typeof entry === "object" ? JSON.stringify(entry) : String(entry));
+    }
+  }
+  return params.toString();
 }
 
 // Produces a concrete request description from form values.
