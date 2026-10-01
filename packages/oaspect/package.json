@@ -1,0 +1,54 @@
+{
+  "name": "oaspect",
+  "version": "0.1.0",
+  "description": "Interactive API reference for OpenAPI documents: one script tag, a web component, a CLI and server helpers.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/oaspect.js",
+  "browser": "./dist/oaspect.js",
+  "unpkg": "./dist/oaspect.js",
+  "jsdelivr": "./dist/oaspect.js",
+  "bin": {
+    "oaspect": "./bin/oaspect.mjs"
+  },
+  "exports": {
+    ".": "./dist/oaspect.js",
+    "./server": {
+      "types": "./src/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src/server.d.ts"
+  ],
+  "keywords": [
+    "openapi",
+    "swagger",
+    "api-documentation",
+    "api-reference",
+    "cli",
+    "web-component"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "typecheck": "true",
+    "lint": "true"
+  },
+  "dependencies": {
+    "@oaspect/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@oaspect/react": "workspace:^",
+    "esbuild": "^0.25.12",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "vitest": "^3.2.7"
+  }
+}
