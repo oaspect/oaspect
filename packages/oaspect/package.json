@@ -22,6 +22,10 @@
   "files": [
     "bin",
     "dist",
+    "src/html.js",
+    "src/serve.js",
+    "src/server.js",
+    "src/spec.js",
     "src/server.d.ts"
   ],
   "keywords": [
