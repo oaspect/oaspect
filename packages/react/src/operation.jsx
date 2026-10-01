@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { jsonMediaType, linkTarget, mediaExample, resolveSchema, securityRequirements } from "@oaspect/core";
 import CodeBlock, { CopyButton } from "./code-block";
 import { useLocalized, useT } from "./i18n/context";
@@ -10,6 +10,7 @@ import { RequestSample, ResponseSample } from "./samples";
 import SchemaTree, { FieldDetails } from "./schema-tree";
 import { useModel, useSpec } from "./spec-context";
 import { ChevronIcon, LockIcon } from "./icons";
+import { useNearViewport } from "./lazy";
 
 // Titles are translation keys.
 const PARAM_GROUPS = [
@@ -257,12 +258,28 @@ function SecurityLine({ operation }) {
   );
 }
 
-function Operation({ operation, onTry }) {
+function Operation({ operation, onTry, eager = false }) {
   const t = useT();
   const localized = useLocalized();
   const webhook = operation.kind === "webhook";
+  const ref = useRef(null);
+  const near = useNearViewport(ref, eager);
+
+  // The <section> stays the same element so anchors and the scroll spy keep
+  // working; only its content switches from placeholder to full details.
+  if (!near) {
+    return (
+      <section ref={ref} id={operation.anchor} data-anchor className="min-h-[32rem] border-b border-border py-14">
+        <h3 className="text-2xl font-semibold tracking-tight [overflow-wrap:anywhere]">{localized(operation, "summary") || operation.path}</h3>
+        <p dir="ltr" className="mt-3 font-mono text-sm text-muted-foreground">
+          {operation.method.toUpperCase()} {operation.path}
+        </p>
+      </section>
+    );
+  }
+
   return (
-    <section id={operation.anchor} data-anchor className="border-b border-border py-14">
+    <section ref={ref} id={operation.anchor} data-anchor className="border-b border-border py-14">
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]">
         <div className="min-w-0">
           <h3 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight [overflow-wrap:anywhere]">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { applySecurity, buildModel, loadSpec, loadSpecText, normalizeSpec, securityRequirements, serverUrl } from "@oaspect/core";
 import { LocaleProvider, useAvailableLocales, useLocale, useLocalized, useSetLocale, useT } from "./i18n/context";
 import { LOCALE_NAMES, directionOf, mergeMessages } from "./i18n/index";
+import { LazyContext, scrollToAnchor } from "./lazy";
 import { createStorage } from "./storage";
 import Intro from "./intro";
 import Markdown from "./markdown";
@@ -168,6 +169,9 @@ function systemTheme() {
   }
 }
 
+const LAZY_THRESHOLD = 40;
+const EAGER_OPERATIONS = 8;
+
 const DEFAULT_FEATURES = {
   sourceMenu: true,
   languageSwitcher: true,
@@ -187,6 +191,7 @@ function Viewer({
   defaultSnippet,
   urlParam,
   theme: themeProp,
+  lazy,
 }) {
   const features = { ...DEFAULT_FEATURES, ...featureOverrides };
   const storage = useMemo(() => createStorage(storagePrefix), [storagePrefix]);
@@ -306,6 +311,10 @@ function Viewer({
   }
 
   const model = useMemo(() => (spec ? buildModel(spec) : null), [spec]);
+  // "auto": render sections lazily only for documents large enough to need it.
+  const lazyEnabled = lazy === true || (lazy === "auto" && (model?.operations.length ?? 0) > LAZY_THRESHOLD);
+  // The first operations render eagerly so the top of the page is complete.
+  const eagerAnchors = useMemo(() => new Set(model?.operations.slice(0, EAGER_OPERATIONS).map((operation) => operation.anchor)), [model]);
 
   // Reset the server choice whenever a new spec is loaded.
   useEffect(() => {
@@ -366,9 +375,17 @@ function Viewer({
     rootRef.current.querySelectorAll("[data-anchor]").forEach((node) => observer.observe(node));
 
     const target = decodeURIComponent(window.location.hash.slice(1));
-    if (target) document.getElementById(target)?.scrollIntoView();
+    if (target) scrollToAnchor(target);
 
-    return () => observer.disconnect();
+    // Anchor links jump to a section whose neighbours may still render;
+    // keep the target in place while they do.
+    const onHash = () => scrollToAnchor(decodeURIComponent(window.location.hash.slice(1)));
+    window.addEventListener("hashchange", onHash);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("hashchange", onHash);
+    };
   }, [model]);
 
   // ⌘K / Ctrl+K focuses the sidebar search.
@@ -457,6 +474,7 @@ function Viewer({
                 <div className="fixed inset-0 top-14 z-10 bg-black/30 lg:hidden" onClick={closeSidebar} aria-hidden="true" />
               )}
 
+              <LazyContext.Provider value={lazyEnabled}>
               <main className="min-w-0 flex-1 px-4 sm:px-8 xl:px-12">
                 <div className="mx-auto max-w-[88rem]">
                   <Intro spec={spec} model={model} />
@@ -465,7 +483,12 @@ function Viewer({
                       <h2 className="text-3xl font-bold tracking-tight [overflow-wrap:anywhere]">{localized(tag, "name")}</h2>
                       <Markdown source={localized(tag, "description")} className="mt-3 max-w-3xl text-muted-foreground" />
                       {tag.operations.map((operation) => (
-                        <Operation key={operation.anchor} operation={operation} onTry={features.tryIt ? openTry : null} />
+                        <Operation
+                          key={operation.anchor}
+                          operation={operation}
+                          onTry={features.tryIt ? openTry : null}
+                          eager={eagerAnchors.has(operation.anchor)}
+                        />
                       ))}
                     </section>
                   ))}
@@ -481,6 +504,7 @@ function Viewer({
                   {features.models && <Models schemas={model.schemas} />}
                 </div>
               </main>
+              </LazyContext.Provider>
             </div>
           )}
 
@@ -513,6 +537,7 @@ export function ApiReference({
   defaultSnippet = "shell:curl",
   urlParam = "url",
   theme,
+  lazy = "auto",
 }) {
   const merged = useMemo(() => mergeMessages(messages), [messages]);
 
@@ -529,6 +554,7 @@ export function ApiReference({
         defaultSnippet={defaultSnippet}
         urlParam={urlParam}
         theme={theme}
+        lazy={lazy}
       />
     </LocaleProvider>
   );

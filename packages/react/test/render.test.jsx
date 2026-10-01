@@ -91,3 +91,32 @@ describe("webhooks, callbacks, links and server variables", () => {
     expect(html).toContain("https://eu.example.com/subscriptions");
   });
 });
+
+describe("lazy rendering", () => {
+  const big = {
+    openapi: "3.0.3",
+    info: { title: "Big", version: "1" },
+    paths: Object.fromEntries(
+      Array.from({ length: 60 }, (_, index) => [
+        `/items${index}`,
+        { get: { operationId: `item${index}`, summary: `Item ${index}`, parameters: [{ name: `p${index}`, in: "query", schema: { type: "string" } }], responses: { 200: { description: "OK" } } } },
+      ]),
+    ),
+  };
+
+  test("auto: large documents render placeholders after the first operations", () => {
+    const html = renderToString(<ApiReference spec={big} />);
+    expect(html).toContain('id="operation/item59"');
+    expect(html).toContain("Item 59");
+    expect(html).toContain("p0");
+    expect(html).not.toContain("p59");
+  });
+
+  test("lazy={false} renders everything (e.g. for prerendering)", () => {
+    expect(renderToString(<ApiReference spec={big} lazy={false} />)).toContain("p59");
+  });
+
+  test("small documents render fully under auto", () => {
+    expect(renderToString(<ApiReference spec={spec} />)).toContain("Health check");
+  });
+});

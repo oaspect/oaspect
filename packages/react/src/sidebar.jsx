@@ -26,6 +26,9 @@ function matches(operation, query, localized) {
 
 const tagNames = (operation) => operation.tags.join(" ");
 
+// CSS.escape where available (not in every DOM implementation).
+const cssEscape = (value) => (globalThis.CSS?.escape ? CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&"));
+
 function matchesSchema(item, query, localized) {
   return [item.name, localized(item.schema, "description"), item.schema.description, item.schema.title]
     .filter(Boolean)
@@ -66,7 +69,7 @@ export default function Sidebar({ model, activeAnchor, searchRef, onNavigate, sh
 
   useEffect(() => {
     listRef.current
-      ?.querySelector(`[data-nav="${CSS.escape(activeAnchor ?? "")}"]`)
+      ?.querySelector(`[data-nav="${cssEscape(activeAnchor ?? "")}"]`)
       ?.scrollIntoView({ block: "nearest" });
   }, [activeAnchor]);
 

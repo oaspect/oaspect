@@ -48,6 +48,11 @@ export interface ApiReferenceProps {
   urlParam?: string | null;
   /** Force a theme instead of the reader's stored or system preference. */
   theme?: "light" | "dark";
+  /**
+   * Render operations and models only when they come near the viewport.
+   * "auto" (default) does so for documents with more than 40 operations.
+   */
+  lazy?: boolean | "auto";
 }
 
 export declare function ApiReference(props: ApiReferenceProps): ReactNode;
