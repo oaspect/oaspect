@@ -403,7 +403,9 @@ function pushText(nodes, value) {
   else nodes.push({ type: "text", value });
 }
 
-export function parseInline(text: string): InlineNode[] {
+// `links: false` parses a link's label: links cannot nest in HTML, so
+// nested links and autolinks there stay plain text.
+export function parseInline(text: string, { links = true }: { links?: boolean } = {}): InlineNode[] {
   const nodes: InlineNode[] = [];
   let index = 0;
 
@@ -450,7 +452,7 @@ export function parseInline(text: string): InlineNode[] {
     }
 
     // Images and links
-    if (char === "[" || (char === "!" && text[index + 1] === "[")) {
+    if ((links && char === "[") || (char === "!" && text[index + 1] === "[")) {
       const image = char === "!";
       const open = image ? index + 1 : index;
       const close = closingBracket(text, open);
@@ -460,7 +462,7 @@ export function parseInline(text: string): InlineNode[] {
         nodes.push(
           image
             ? { type: "image", src: target.href, alt: label, title: target.title }
-            : { type: "link", href: target.href, title: target.title, children: parseInline(label) },
+            : { type: "link", href: target.href, title: target.title, children: parseInline(label, { links: false }) },
         );
         index = target.end;
         continue;
@@ -468,13 +470,13 @@ export function parseInline(text: string): InlineNode[] {
     }
 
     // Autolinks
-    const autolink = char === "<" ? AUTOLINK.exec(rest) : null;
+    const autolink = links && char === "<" ? AUTOLINK.exec(rest) : null;
     if (autolink) {
       nodes.push({ type: "link", href: autolink[1], children: [{ type: "text", value: autolink[1].replace(/^mailto:/, "") }] });
       index += autolink[0].length;
       continue;
     }
-    if (char === "h" && !/\w/.test(text[index - 1] ?? "")) {
+    if (links && char === "h" && !/\w/.test(text[index - 1] ?? "")) {
       const url = BARE_URL.exec(rest);
       if (url) {
         nodes.push({ type: "link", href: url[0], children: [{ type: "text", value: url[0] }] });
@@ -491,7 +493,7 @@ export function parseInline(text: string): InlineNode[] {
       const end = closingDelimiter(text, delimiter, index + delimiter.length);
       if (end !== -1) {
         const type = delimiter === "~~" ? "del" : delimiter.length === 2 ? "strong" : "em";
-        nodes.push({ type, children: parseInline(text.slice(index + delimiter.length, end)) });
+        nodes.push({ type, children: parseInline(text.slice(index + delimiter.length, end), { links }) });
         index = end + delimiter.length;
         continue;
       }

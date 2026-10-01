@@ -47,6 +47,14 @@ describe("inline", () => {
     assert.equal(flat(parseInline("[not a link] here")), "[not a link] here");
   });
 
+  test("links never nest: URLs and brackets inside a label stay text", () => {
+    const [link] = parseInline("[http://swagger.io](http://swagger.io)");
+    assert.equal(link.type, "link");
+    assert.deepEqual((link as any).children, [{ type: "text", value: "http://swagger.io" }]);
+    assert.equal(flat(parseInline("[see **<https://a.dev>**](https://b.dev)")), "[see <strong><https://a.dev></strong>](https://b.dev)");
+    assert.equal(flat(parseInline("[outer [inner](https://a.dev)](https://b.dev)")), "[outer [inner](https://a.dev)](https://b.dev)");
+  });
+
   test("escapes and hard breaks", () => {
     assert.equal(flat(parseInline("\\*literal\\* \\`x\\`")), "*literal* `x`");
     assert.equal(flat(parseInline("one  \ntwo\\\nthree\nfour")), "one<br>two<br>three four");
