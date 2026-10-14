@@ -13,6 +13,8 @@ pnpm --filter @oaspect/site screenshots   # after a build; needs Chrome (CHROME_
 - `docs/*.md`: the documentation, rendered by `docs.mjs` with
   `@oaspect/core`'s Markdown parser and highlighter. Page order is `NAV` in
   `docs.mjs`; link pages as `configuration.md#anchor` (works on GitHub too).
+  Write `oaspect@{{version}}` in pinned examples: the build puts in the
+  published version.
 - `specs/roastery.yaml`: the showcase demo (OpenAPI 3.1, Turkish and Arabic).
 - `screenshots.mjs`: captures `public/images/*.webp` (light and dark) from the
   built demos; the landing page and the README use them. "Try it" responses

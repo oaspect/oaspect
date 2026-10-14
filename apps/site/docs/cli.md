@@ -56,7 +56,7 @@ Build the reference with your API and publish it with the rest of your static fi
 
 ```yaml
 # .github/workflows/docs.yml (excerpt)
-- run: npx oaspect@0.1.0 build openapi.yaml -o public/docs.html --title "Acme API"
+- run: npx oaspect@{{version}} build openapi.yaml -o public/docs.html --title "Acme API"
 ```
 
 The output depends only on the spec and the oaspect version, so pin the version for reproducible builds.

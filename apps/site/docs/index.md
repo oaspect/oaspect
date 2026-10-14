@@ -9,6 +9,7 @@ oaspect turns an OpenAPI or Swagger document into an interactive API reference: 
 - **Code samples** in 16 languages and 30 clients, built from the same request the Try dialog sends.
 - **Schemas** as expandable trees: `$ref`, `allOf`, `oneOf`/`anyOf`, constraints, enums and examples.
 - **Localization**: the interface in English, Turkish and Arabic (right to left) or your own language, and translated documentation through `x-i18n` and `:::lang` blocks.
+- **Guide sections** for what is not an endpoint (a WebSocket protocol, a walkthrough): headings in descriptions become navigation entries with their own links. See [OpenAPI support](openapi.md#guide-sections).
 - OpenAPI 3.0 and 3.1, Swagger 2.0 (converted on load), JSON or YAML, references split across files.
 - Light and dark themes, a phone layout, deep links to every operation and model, and `⌘K` search.
 

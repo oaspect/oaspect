@@ -34,7 +34,7 @@ To decide where it goes, or to pass options that are not strings (callbacks, obj
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/oaspect@0.1.0/dist/oaspect.js"
+  src="https://cdn.jsdelivr.net/npm/oaspect@{{version}}/dist/oaspect.js"
   integrity="sha384-…"
   crossorigin="anonymous"
 ></script>
@@ -43,10 +43,10 @@ To decide where it goes, or to pass options that are not strings (callbacks, obj
 jsDelivr shows the hash on the package page; you can also compute it:
 
 ```bash
-curl -s https://cdn.jsdelivr.net/npm/oaspect@0.1.0/dist/oaspect.js | openssl dgst -sha384 -binary | openssl base64 -A
+curl -s https://cdn.jsdelivr.net/npm/oaspect@{{version}}/dist/oaspect.js | openssl dgst -sha384 -binary | openssl base64 -A
 ```
 
-unpkg works the same way: `https://unpkg.com/oaspect@0.1.0/dist/oaspect.js`. To self-host, copy `dist/oaspect.js` from the npm package.
+unpkg works the same way: `https://unpkg.com/oaspect@{{version}}/dist/oaspect.js`. To self-host, copy `dist/oaspect.js` from the npm package.
 
 ## Web component
 

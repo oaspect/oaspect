@@ -229,7 +229,9 @@ const SCRIPT = `
 export function renderDocs({ dir, version }) {
   const pages = NAV.flatMap(([section, items]) => items.map(([slug, title]) => ({ section, slug, title })));
   return pages.map((page, index) => {
-    const source = readFileSync(join(dir, `${page.slug}.md`), "utf8");
+    // {{version}} in the sources is the published version, so pinned
+    // examples (CDN URLs, npx) stay current with every release.
+    const source = readFileSync(join(dir, `${page.slug}.md`), "utf8").replaceAll("{{version}}", version);
     const parsed = parseMarkdown(source);
     // The first paragraph after the H1 is the page lead.
     const h1 = parsed.find((block) => block.type === "heading" && block.level === 1);

@@ -7,7 +7,7 @@ Recipes for common stacks. React apps use `@oaspect/react`; everything else uses
 Hugo, Jekyll, Eleventy, a CMS page or a bare HTML file: add the script where the reference should appear.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/oaspect@0.1.0/dist/oaspect.js" data-spec-url="/openapi.yaml"></script>
+<script src="https://cdn.jsdelivr.net/npm/oaspect@{{version}}/dist/oaspect.js" data-spec-url="/openapi.yaml"></script>
 ```
 
 The reference fills the width of its container and uses the page's scroll. Give it the whole page (`body { margin: 0 }`) for the three-column layout. Its header is sticky at the top of the viewport, so it sits best on a page without another sticky header.
@@ -144,7 +144,7 @@ Attribute changes re-render the reference, so bound values such as `locale` stay
 ---
 <html lang="en">
   <body style="margin: 0">
-    <script is:inline src="https://cdn.jsdelivr.net/npm/oaspect@0.1.0/dist/oaspect.js" data-spec-url="/openapi.yaml"></script>
+    <script is:inline src="https://cdn.jsdelivr.net/npm/oaspect@{{version}}/dist/oaspect.js" data-spec-url="/openapi.yaml"></script>
   </body>
 </html>
 ```
