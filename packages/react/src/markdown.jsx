@@ -7,7 +7,7 @@
 
 import { useMemo } from "react";
 import { useLocale } from "./i18n/context";
-import { parseMarkdown, safeUrl, selectLocale } from "@oaspect/core";
+import { anchorHeadings, parseMarkdown, safeUrl, selectLocale } from "@oaspect/core";
 import CodeBlock from "./code-block";
 
 // Fence info strings → tokenizer languages in src/lib/highlight.js.
@@ -117,8 +117,11 @@ function Blocks({ blocks, tight = false }) {
       case "heading": {
         // Descriptions sit under the page's own h1/h2, so levels shift down.
         const Tag = `h${Math.min(block.level + 2, 6)}`;
+        // Anchored headings are navigation targets: linkable, and watched by
+        // the scroll spy (data-anchor).
+        const anchored = block.anchor ? { id: block.anchor, "data-anchor": true } : {};
         return (
-          <Tag key={index} dir="auto" className={`${HEADING_STYLES[block.level]} pt-2 text-foreground`}>
+          <Tag key={index} dir="auto" {...anchored} className={`${HEADING_STYLES[block.level]} scroll-mt-20 pt-2 text-foreground`}>
             <Inline nodes={block.children} />
           </Tag>
         );
@@ -222,9 +225,14 @@ function Blocks({ blocks, tight = false }) {
   });
 }
 
-export default function Markdown({ source, className = "" }) {
+// `anchorPrefix` turns the headings (h1–h3 in the source) into anchors
+// "<prefix>/<slug>" that the sidebar lists (outline.js).
+export default function Markdown({ source, className = "", anchorPrefix }) {
   const locale = useLocale();
-  const blocks = useMemo(() => selectLocale(parseMarkdown(source), locale), [source, locale]);
+  const blocks = useMemo(() => {
+    const selected = selectLocale(parseMarkdown(source), locale);
+    return anchorPrefix ? anchorHeadings(selected, anchorPrefix) : selected;
+  }, [source, locale, anchorPrefix]);
   if (blocks.length === 0) return null;
 
   return (

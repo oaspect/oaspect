@@ -41,7 +41,7 @@ export default function Intro({ spec, model }) {
           <dl className="mt-6 grid grid-cols-3 gap-3 sm:max-w-md">
             {[
               [t("intro.endpoints"), model.operations.length],
-              [t("intro.groups"), model.tags.length],
+              [t("intro.groups"), model.tags.filter((tag) => tag.operations.length > 0).length],
               [t("intro.models"), model.schemas.length],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl border border-border bg-card p-3">
@@ -66,7 +66,7 @@ export default function Intro({ spec, model }) {
             )}
           </div>
 
-          <Markdown source={localized(info, "description")} className="mt-8 text-base text-muted-foreground" />
+          <Markdown source={localized(info, "description")} anchorPrefix="introduction" className="mt-8 text-base text-muted-foreground" />
         </div>
 
         <aside className="min-w-0 space-y-4 self-start rounded-2xl border border-border bg-card p-5">

@@ -120,3 +120,40 @@ describe("lazy rendering", () => {
     expect(renderToString(<ApiReference spec={spec} />)).toContain("Health check");
   });
 });
+
+describe("guide sections", () => {
+  const guide = {
+    openapi: "3.0.3",
+    info: {
+      title: "Realtime API",
+      version: "1",
+      description: ":::lang en\n## Overview {#overview}\nText.\n### Environments\nMore.\n:::\n\n:::lang tr\n## Genel bakış {#overview}\nMetin.\n### Ortamlar\nDaha fazla.\n:::",
+    },
+    tags: [
+      { name: "WebSocket", description: "## Connect\nOpen `wss://…`.\n## Messages {#messages}\nJSON frames.", "x-i18n": { tr: { name: "WebSocket" } } },
+      { name: "Health", description: "Liveness." },
+    ],
+    paths: { "/health": { get: { tags: ["Health"], summary: "Health check", responses: { 200: { description: "OK" } } } } },
+  };
+
+  test("description headings become anchors and sidebar entries", () => {
+    const html = renderToString(<ApiReference spec={guide} />);
+    expect(html).toContain('id="introduction/overview"');
+    expect(html).toContain('href="#introduction/overview"');
+    // Sub-sections are listed once their group opens, like a tag's operations.
+    expect(html).not.toContain('href="#introduction/environments"');
+    expect(html).toContain('aria-expanded="false" aria-label="Overview"');
+    expect(html).toContain('id="tag/websocket"');
+    expect(html).toContain('id="tag/websocket/connect"');
+    expect(html).toContain('id="tag/websocket/messages"');
+    expect(html).toContain('href="#tag/websocket"');
+    expect(html).toContain("Health check");
+  });
+
+  test("anchors with {#id} stay the same in another language", () => {
+    const html = renderToString(<ApiReference spec={guide} locale="tr" />);
+    expect(html).toContain('id="introduction/overview"');
+    expect(html).toContain("Genel bakış");
+    expect(html).toContain('id="introduction/ortamlar"');
+  });
+});

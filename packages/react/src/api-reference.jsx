@@ -516,7 +516,7 @@ function Viewer({
                   {model.tags.map((tag) => (
                     <section key={tag.name} id={tag.anchor} data-anchor className="pt-14">
                       <h2 className="text-3xl font-bold tracking-tight [overflow-wrap:anywhere]">{localized(tag, "name")}</h2>
-                      <Markdown source={localized(tag, "description")} className="mt-3 max-w-3xl text-muted-foreground" />
+                      <Markdown source={localized(tag, "description")} anchorPrefix={tag.anchor} className="mt-3 max-w-3xl text-muted-foreground" />
                       {tag.operations.map((operation) => (
                         <Operation
                           key={operation.anchor}
