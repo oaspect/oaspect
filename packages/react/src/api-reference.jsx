@@ -367,18 +367,44 @@ function Viewer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model, schemes, serverIndex, customServer, serverVariables, token, credentials, language, proxyUrl, storage, features.tryIt]);
 
-  // Scroll spy: the section crossing the band under the header is active.
+  // Scroll spy: the active section is the last one whose top has passed the
+  // line under the sticky header; at the end of the page, the last one in
+  // view. Re-armed when the language changes: description headings (and
+  // their anchors, unless they have an {#id}) follow the language.
   useEffect(() => {
     if (!model || !rootRef.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter((entry) => entry.isIntersecting);
-        if (visible.length) setActiveAnchor(visible[visible.length - 1].target.id);
-      },
-      { rootMargin: "-72px 0px -70% 0px" },
-    );
-    rootRef.current.querySelectorAll("[data-anchor]").forEach((node) => observer.observe(node));
+    const nodes = [...rootRef.current.querySelectorAll("[data-anchor]")];
+    if (nodes.length === 0) return;
+    const LINE = 96;
+    let frame = 0;
 
+    const update = () => {
+      frame = 0;
+      const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      const limit = atEnd ? window.innerHeight * 0.7 : LINE;
+      let current = nodes[0].id;
+      for (const node of nodes) {
+        if (node.getBoundingClientRect().top > limit) break;
+        current = node.id;
+      }
+      setActiveAnchor(current);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [model, locale]);
+
+  useEffect(() => {
+    if (!model) return;
     const target = decodeURIComponent(window.location.hash.slice(1));
     if (target) scrollToAnchor(target);
 
@@ -387,10 +413,7 @@ function Viewer({
     const onHash = () => scrollToAnchor(decodeURIComponent(window.location.hash.slice(1)));
     window.addEventListener("hashchange", onHash);
 
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("hashchange", onHash);
-    };
+    return () => window.removeEventListener("hashchange", onHash);
   }, [model]);
 
   // ⌘K / Ctrl+K focuses the sidebar search.
