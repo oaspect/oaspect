@@ -92,7 +92,9 @@ console.log(client.build(request));
 
 | Function | Does |
 | --- | --- |
-| `parseMarkdown(text)` | Markdown to a block tree (the GFM subset the viewer renders, including `:::lang` blocks). `parseBlocks` and `parseInline` are the parts. |
+| `parseMarkdown(text)` | Markdown to a block tree (the GFM subset the viewer renders, including `:::lang` blocks and `{#id}` headings). `parseBlocks` and `parseInline` are the parts. |
+| `anchorHeadings(blocks, prefix, maxLevel)`, `headingsOf(blocks)` | Give headings (up to `###` by default) unique anchors `<prefix>/<id or slug>`, and list them: the navigation of guide sections. |
+| `headingSlug(text)`, `plainText(nodes)` | The slug a heading gets (any script, accents dropped) and the text of inline nodes. |
 | `selectLocale(blocks, locale, fallbacks)` | Keeps the language block that matches. |
 | `safeUrl(url, { image })` | Returns the URL when it is safe to link, else `null`. |
 | `localize(node, field, locale)` | The `x-i18n` translation of a field, or the field. |

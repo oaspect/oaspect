@@ -97,6 +97,7 @@ Token'ınızı `Authorization` header'ında gönderin.
 - Blocks that follow each other are alternatives of the same content. The reader sees the block matching the UI language, else English, else the first block, so an untranslated language still gets something.
 - One block can serve several languages: `:::lang tr, az`. Region tags work as above.
 - Text outside blocks shows in every language, so you can translate only some sections.
+- Headings in descriptions are navigation entries with anchors made from their text, so a translated heading gets a different anchor. Give both versions the same `{#id}` (`## Errors {#errors}`, `## Hatalar {#errors}`) to keep links and bookmarks working in every language.
 - Tools that do not know the syntax (Redoc, Swagger UI) show every language one after the other with the `:::lang` lines; nothing breaks.
 
 ## Search

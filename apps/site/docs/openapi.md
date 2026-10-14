@@ -42,9 +42,40 @@ Schema trees expand field by field and show:
 
 Request and response examples come from the media type's `example` or `examples` (with a picker when there are several), else they are generated from the schema. For each field the generator takes, in order: `example`, the first of `examples`, `default`, the first `enum` value, `const`, the first `oneOf`/`anyOf` variant, and otherwise a value for the type: a sample for the `format` (`date-time`, `email`, `uuid`, `uri`…), the `minimum` for numbers, `true` for booleans. `writeOnly` properties are left out.
 
+## Guide sections
+
+Not everything is an endpoint. A WebSocket protocol, a webhook signature scheme or an integration walkthrough needs headings and prose, and oaspect lays them out the way Redoc does:
+
+- **Headings in `info.description`** become entries of their own in the navigation, after "Introduction". The shallowest heading level gives the entries; the next level is listed under them when the entry opens.
+- **Tags without operations** are guide sections: a title in the navigation and the tag's Markdown `description`, in the order of `tags`. Their headings are listed under the title the same way.
+- **Tags with operations** list their description's headings before the operations.
+- **`x-traitTag: true`** makes a tag a guide section even when operations use it; those operations stay listed under their other tags.
+
+```yaml
+tags:
+  - name: WebSocket session
+    description: |
+      ## Connecting {#connecting}
+      Open `wss://api.example.com/ws?session={id}`.
+
+      ## Messages {#messages}
+      Every frame is a JSON object with a `type`.
+
+      ### Client to server {#client-messages}
+      …
+  - name: Documents
+    description: Identity document checks over HTTP.
+paths:
+  /documents:
+    post:
+      tags: [Documents]
+```
+
+Every listed heading is an anchor: `#introduction/<heading>` in the description, `#tag/<tag>/<heading>` in a tag, so you can link straight to it. The anchor comes from the heading text; add `{#id}` at the end of the heading to fix it, which keeps links working when the text changes or is translated.
+
 ## Markdown
 
-Descriptions are Markdown (a GitHub-flavored subset): headings, paragraphs, emphasis, strikethrough, inline code, links, images, automatic links, ordered, unordered and task lists, nested lists, tables with alignment, fenced code blocks (highlighted for the languages oaspect knows), block quotes and horizontal rules.
+Descriptions are Markdown (a GitHub-flavored subset): headings (with an optional `{#id}`), paragraphs, emphasis, strikethrough, inline code, links, images, automatic links, ordered, unordered and task lists, nested lists, tables with alignment, fenced code blocks (highlighted for the languages oaspect knows), block quotes and horizontal rules.
 
 Raw HTML is never rendered: it shows as text. Links and images accept `http`, `https`, `mailto` and relative URLs only.
 
@@ -54,6 +85,8 @@ Raw HTML is never rendered: it shows as text. Links and images accept `http`, `h
 | --- | --- | --- |
 | `x-i18n` | Most objects with text | Translations of `summary`, `description`, `title` and tag `name`. See [Localization](localization.md#short-fields-x-i18n). |
 | `:::lang` blocks | Markdown text | Several languages in one field. See [Localization](localization.md#long-markdown-lang-blocks). |
+| `x-traitTag` | Tag | `true` shows the tag as a guide section only. See [Guide sections](#guide-sections). |
+| `{#id}` | Markdown heading | Fixed anchor for the heading. |
 
 Other `x-` extensions are ignored. oaspect stores resolved external documents under `components.x-oaspect-external`; you never write that yourself.
 
@@ -61,4 +94,5 @@ Other `x-` extensions are ignored. oaspect stores resolved external documents un
 
 - XML schemas (`xml` objects) are shown as plain schemas.
 - `const` and `discriminator` are not shown; `x-codeSamples` (Redoc's custom samples) and `x-tagGroups` are ignored.
+- Headings deeper than `###` are not listed in the navigation.
 - OAuth2 `authorizationCode` and `implicit` flows take a token obtained elsewhere; there is no redirect flow.
