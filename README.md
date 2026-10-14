@@ -46,6 +46,10 @@ A lightweight alternative to Redoc and Scalar.
   never rendered
 - **Localized docs**: UI in English, Turkish, Arabic (RTL) or your own
   language; spec text translated with `x-i18n` and `:::lang` blocks
+- **Guide sections** (as in Redoc): headings in descriptions become navigation
+  entries with anchors, and tags without operations (or with `x-traitTag`)
+  become title-and-prose sections, e.g. for a WebSocket protocol
+  ([demo](https://oaspect.dev/demo/liveness.html))
 - Light/dark themes, mobile layout, deep links, ⌘K search
 - Styles scoped under `.oaspect`: drop it into any page without CSS conflicts
 - 138 KB gzipped as a single script, React included
