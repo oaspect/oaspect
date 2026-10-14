@@ -133,8 +133,12 @@ export function buildModel(spec: OpenAPIDocument): ApiModel {
     operationsOf(spec, name, item, "webhook", `webhook/${slugify(name)}`),
   );
 
+  // Tags without operations are guide sections: a title and a Markdown
+  // description, in the order of `tags`. Redoc's `x-traitTag: true` marks one
+  // explicitly; its operations stay listed under their other tags only.
   const tags = [...groups.entries()]
-    .filter(([, list]) => list.length > 0)
+    .map(([name, list]) => [name, tagMeta.get(name)?.["x-traitTag"] === true ? [] : list] as const)
+    .filter(([name, list]) => list.length > 0 || Boolean(tagMeta.get(name)?.description))
     .map(([name, list]) => ({
       name,
       anchor: tagAnchor(name),

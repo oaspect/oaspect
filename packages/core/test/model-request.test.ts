@@ -106,3 +106,35 @@ describe("requests", () => {
     assert.equal(request.headers["Content-Type"], undefined);
   });
 });
+
+describe("guide tags", () => {
+  const doc = {
+    openapi: "3.0.3",
+    info: { title: "Guide", version: "1" },
+    tags: [
+      { name: "Getting started", description: "## Install\nRun it." },
+      { name: "Pets", description: "Pet operations." },
+      { name: "Shared", description: "Common behavior.", "x-traitTag": true },
+      { name: "Empty" },
+    ],
+    paths: { "/pets": { get: { tags: ["Pets", "Shared"], responses: { 200: { description: "OK" } } } } },
+  };
+
+  test("tags without operations but with a description are kept, in order", () => {
+    const model = buildModel(doc);
+    assert.deepEqual(
+      model.tags.map((tag) => [tag.name, tag.operations.length]),
+      [
+        ["Getting started", 0],
+        ["Pets", 1],
+        ["Shared", 0],
+      ],
+    );
+  });
+
+  test("x-traitTag tags show their description only; operations stay under other tags", () => {
+    const model = buildModel(doc);
+    assert.equal(model.tags.find((tag) => tag.name === "Shared").operations.length, 0);
+    assert.equal(model.operations.length, 1);
+  });
+});
