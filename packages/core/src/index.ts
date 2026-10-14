@@ -9,7 +9,7 @@ export { buildRequest, defaultBody, defaultForm, defaultValues, formEncode, isMu
 export type { BuildRequestOptions, DefaultBody } from "./request";
 export { SNIPPET_LANGUAGES, resolveSnippet } from "./snippets";
 export { localize } from "./i18n";
-export { parseBlocks, parseInline, parseMarkdown, safeUrl, selectLocale } from "./markdown";
+export { anchorHeadings, headingSlug, headingsOf, parseBlocks, parseInline, parseMarkdown, plainText, safeUrl, selectLocale } from "./markdown";
 export { tokenize } from "./highlight";
 export { TOKEN_FLOWS, applySecurity, buildTokenRequest, describeScheme, hasCredential, securityRequirements } from "./security";
 export type { AuthParts, Credential, Credentials, SecurityRequirement } from "./security";

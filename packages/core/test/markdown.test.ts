@@ -1,6 +1,6 @@
 import { describe, test } from "vitest";
 import assert from "node:assert/strict";
-import { parseInline, parseMarkdown, safeUrl, selectLocale } from "../src/index";
+import { anchorHeadings, headingSlug, headingsOf, parseInline, parseMarkdown, safeUrl, selectLocale } from "../src/index";
 
 // Compact inline representation for readable assertions.
 function flat(nodes) {
@@ -212,5 +212,49 @@ describe("language blocks", () => {
 
   test("other ::: lines are not language blocks", () => {
     assert.equal(parseMarkdown(":::note\nx\n:::")[0].type, "paragraph");
+  });
+});
+
+describe("heading anchors", () => {
+  const outline = (source, locale = "en", prefix = "introduction") =>
+    headingsOf(anchorHeadings(selectLocale(parseMarkdown(source), locale), prefix)).map(({ level, text, anchor }) => [level, text, anchor]);
+
+  test("{#id} sets a fixed id and is not part of the text", () => {
+    const [heading] = parseMarkdown("## Errors {#errors}");
+    assert.equal(heading.id, "errors");
+    assert.equal(flat(heading.children), "Errors");
+    assert.equal(parseMarkdown("## Use {braces}")[0].id, undefined);
+  });
+
+  test("slugs keep letters of any script and drop accents", () => {
+    assert.equal(headingSlug("Doğrulama adımları"), "dogrulama-adimlari");
+    assert.equal(headingSlug("Rate limits & quotas"), "rate-limits-quotas");
+    assert.equal(headingSlug("الأخطاء"), "الاخطاء");
+    assert.equal(headingSlug("!!!"), "section");
+  });
+
+  test("headings get prefixed anchors, unique within the text", () => {
+    assert.deepEqual(outline("# Guide\n## Setup\n## Setup\n### Keys {#keys}\n#### Too deep"), [
+      [1, "Guide", "introduction/guide"],
+      [2, "Setup", "introduction/setup"],
+      [2, "Setup", "introduction/setup-2"],
+      [3, "Keys", "introduction/keys"],
+    ]);
+  });
+
+  test("headings inside lists and quotes are not navigation targets", () => {
+    assert.deepEqual(outline("> ## Quoted\n\n- ## Listed\n\n## Real"), [[2, "Real", "introduction/real"]]);
+  });
+
+  test("anchors follow the selected language; {#id} keeps them the same", () => {
+    const source = ":::lang en\n## Errors {#errors}\n## Limits\n:::\n\n:::lang tr\n## Hatalar {#errors}\n## Limitler\n:::";
+    assert.deepEqual(outline(source, "en", "tag/guide"), [
+      [2, "Errors", "tag/guide/errors"],
+      [2, "Limits", "tag/guide/limits"],
+    ]);
+    assert.deepEqual(outline(source, "tr", "tag/guide"), [
+      [2, "Hatalar", "tag/guide/errors"],
+      [2, "Limitler", "tag/guide/limitler"],
+    ]);
   });
 });

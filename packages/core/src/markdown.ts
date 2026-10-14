@@ -20,10 +20,13 @@
 // A block may list several locales (":::lang tr, az"). Content outside
 // language blocks is shared by every language. See selectLocale().
 //
+// Extension: heading ids. "## Errors {#errors}" gives the heading a fixed
+// anchor, so links and navigation stay the same in every language.
+//
 // Raw HTML is never interpreted: it stays literal text. The output is a small
 // AST that components/markdown.jsx turns into React elements.
 
-import type { InlineNode, ListItem, MarkdownBlock } from "./types";
+import type { HeadingEntry, InlineNode, ListItem, MarkdownBlock } from "./types";
 
 type LangBlock = Extract<MarkdownBlock, { type: "lang" }>;
 
@@ -32,6 +35,7 @@ const LANG_OPEN = /^ {0,3}:{3,}[ \t]*lang[ \t]+([A-Za-z]{2,3}(?:[-_][A-Za-z0-9]+
 const CONTAINER_OPEN = /^ {0,3}:{3,}[ \t]*\S/;
 const CONTAINER_CLOSE = /^ {0,3}:{3,}[ \t]*$/;
 const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
+const HEADING_ID = /[ \t]*\{#([A-Za-z0-9][\w.:-]*)\}$/;
 const THEMATIC_BREAK = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const BLOCKQUOTE = /^ {0,3}> ?/;
 const LIST_ITEM = /^( *)([-*+]|\d{1,9}[.)])([ \t]+|$)(.*)$/;
@@ -261,7 +265,14 @@ export function parseBlocks(lines: string[]): MarkdownBlock[] {
 
     const heading = HEADING.exec(line);
     if (heading) {
-      blocks.push({ type: "heading", level: heading[1].length, children: parseInline(heading[2] ?? "") });
+      const text = heading[2] ?? "";
+      const id = HEADING_ID.exec(text)?.[1];
+      blocks.push({
+        type: "heading",
+        level: heading[1].length,
+        children: parseInline(id ? text.replace(HEADING_ID, "") : text),
+        ...(id ? { id } : {}),
+      });
       index += 1;
       continue;
     }
@@ -565,4 +576,69 @@ export function safeUrl(url: unknown, { image = false }: { image?: boolean } = {
   if (!image && /^mailto:/i.test(value)) return value;
   if (!/^[a-z][a-z0-9+.-]*:/i.test(value) && !value.startsWith("//")) return value;
   return null;
+}
+
+/** Text of inline nodes without formatting. */
+export function plainText(nodes: InlineNode[]): string {
+  return nodes
+    .map((node) => {
+      if (node.type === "text" || node.type === "code") return node.value;
+      if (node.type === "image") return node.alt;
+      if ("children" in node) return plainText(node.children);
+      return "";
+    })
+    .join("");
+}
+
+/**
+ * Slug of a heading: letters and digits of any script, lower case, accents
+ * dropped ("Doğrulama adımları" → "dogrulama-adimlari", "الأخطاء" stays Arabic).
+ */
+export function headingSlug(text: string): string {
+  const slug = text
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/ı/g, "i")
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "section";
+}
+
+const isHeadingBlock = (block: MarkdownBlock): block is Extract<MarkdownBlock, { type: "heading" }> => block.type === "heading";
+
+/**
+ * Gives headings up to `maxLevel` an `anchor` ("<prefix>/<id or slug>"),
+ * unique within the blocks. Only headings at the top level (or directly in a
+ * selected language block) count: headings inside lists or quotes are not
+ * navigation targets. Run it after selectLocale() so the anchors follow the
+ * language shown; use {#id} for anchors that stay the same in every language.
+ */
+export function anchorHeadings(blocks: MarkdownBlock[], prefix: string, maxLevel = 3): MarkdownBlock[] {
+  const used = new Map<string, number>();
+  const visit = (list: MarkdownBlock[]): MarkdownBlock[] =>
+    list.map((block) => {
+      if (block.type === "lang-selected") return { ...block, children: visit(block.children) };
+      if (!isHeadingBlock(block) || block.level > maxLevel) return block;
+      const base = `${prefix}/${block.id ?? headingSlug(plainText(block.children))}`;
+      const count = used.get(base) ?? 0;
+      used.set(base, count + 1);
+      return { ...block, anchor: count ? `${base}-${count + 1}` : base };
+    });
+  return visit(blocks);
+}
+
+/** The anchored headings of blocks returned by anchorHeadings(), in order. */
+export function headingsOf(blocks: MarkdownBlock[]): HeadingEntry[] {
+  const entries: HeadingEntry[] = [];
+  const visit = (list: MarkdownBlock[]) => {
+    for (const block of list) {
+      if (block.type === "lang-selected") visit(block.children);
+      else if (isHeadingBlock(block) && block.anchor) {
+        entries.push({ level: block.level, text: plainText(block.children), anchor: block.anchor, children: block.children });
+      }
+    }
+  };
+  visit(blocks);
+  return entries;
 }

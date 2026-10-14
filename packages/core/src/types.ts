@@ -175,7 +175,11 @@ export interface ListItem {
 
 export type MarkdownBlock =
   | { type: "paragraph"; children: InlineNode[] }
-  | { type: "heading"; level: number; children: InlineNode[] }
+  /**
+   * `id`: explicit anchor from a trailing `{#id}`. `anchor`: the element id
+   * given by anchorHeadings(), when the heading is a navigation target.
+   */
+  | { type: "heading"; level: number; children: InlineNode[]; id?: string; anchor?: string }
   | { type: "code"; language: string; text: string }
   | { type: "blockquote"; children: MarkdownBlock[] }
   | { type: "hr" }
@@ -183,3 +187,11 @@ export type MarkdownBlock =
   | { type: "table"; align: ("left" | "right" | "center" | null)[]; header: InlineNode[][]; rows: InlineNode[][][] }
   | { type: "lang"; locales: string[]; children: MarkdownBlock[] }
   | { type: "lang-selected"; locale: string; children: MarkdownBlock[] };
+
+/** A heading in a Markdown outline (see headingsOf()). */
+export interface HeadingEntry {
+  level: number;
+  text: string;
+  anchor: string;
+  children: InlineNode[];
+}
