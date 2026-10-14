@@ -138,7 +138,7 @@ await shot(page, "locale-ar");
 await page.close();
 
 console.log("demos");
-for (const demo of ["roastery", "bookstore", "petstore", "events", "auth"]) {
+for (const demo of ["roastery", "liveness", "bookstore", "petstore", "events", "auth"]) {
   page = await open(page_(`demo/${demo}.html`), { width: 1280, height: 800, scale: 1 });
   await shot(page, `demo-${demo}`);
   await page.close();

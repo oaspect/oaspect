@@ -22,6 +22,7 @@ const build = (spec, out, ...args) => execFileSync(process.execPath, [cli, "buil
 build("oaspect.yaml", "reference.html", "--title", "oaspect server API");
 const demos = [
   ["roastery.yaml", "roastery.html", "Roastery", "OpenAPI 3.1 showcase: Turkish and Arabic, oneOf, uploads, webhooks"],
+  ["liveness.yaml", "liveness.html", "Liveness", "Guide sections: a WebSocket protocol documented with headings and prose"],
   ["bookstore.json", "bookstore.html", "Bookstore", "OpenAPI 3.0: schemas, allOf/oneOf, code samples"],
   ["petstore-swagger2.yaml", "petstore.html", "Petstore", "Swagger 2.0 YAML, converted on load; multipart upload"],
   ["events.json", "events.html", "Events", "OpenAPI 3.1 webhooks, callbacks, links, server variables"],

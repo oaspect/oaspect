@@ -1,0 +1,287 @@
+openapi: 3.0.3
+info:
+  title: Liveness API
+  version: 1.2.0
+  x-i18n:
+    tr: { title: Canlılık API }
+  description: |
+    :::lang en
+    The Liveness API checks that a real person is in front of the camera. You create a **session** over HTTP, then the player's device streams camera frames over a **WebSocket** and receives the result live.
+
+    ## Getting started {#getting-started}
+
+    1. Create a session with `POST /sessions`.
+    2. Open the WebSocket with the session's `token` (see **WebSocket session**).
+    3. Stream frames until the server sends `result`.
+    4. Read the final outcome with `GET /sessions/{id}` from your server.
+
+    ### Environments {#environments}
+
+    | Environment | HTTP | WebSocket |
+    | --- | --- | --- |
+    | Production | `https://api.example.com/v1` | `wss://api.example.com/ws` |
+    | Sandbox | `https://sandbox.example.com/v1` | `wss://sandbox.example.com/ws` |
+
+    ## Authentication {#authentication}
+
+    HTTP requests carry your API key in `Authorization: Bearer …`. The WebSocket uses the short-lived session `token` instead, so the key never reaches the player's device.
+
+    ## Errors {#errors}
+
+    HTTP errors use the usual status codes with a JSON body `{ "error": "…" }`. WebSocket errors arrive as an `error` message and then the server closes the socket (see **Closing**).
+    :::
+
+    :::lang tr
+    Canlılık API'si kameranın karşısında gerçek bir kişi olduğunu kontrol eder. HTTP ile bir **oturum** oluşturursunuz; oyuncunun cihazı kamera karelerini **WebSocket** üzerinden gönderir ve sonucu canlı alır.
+
+    ## Başlarken {#getting-started}
+
+    1. `POST /sessions` ile bir oturum oluşturun.
+    2. Oturumun `token`'ıyla WebSocket'i açın (bkz. **WebSocket oturumu**).
+    3. Sunucu `result` gönderene kadar kare gönderin.
+    4. Nihai sonucu sunucunuzdan `GET /sessions/{id}` ile okuyun.
+
+    ### Ortamlar {#environments}
+
+    | Ortam | HTTP | WebSocket |
+    | --- | --- | --- |
+    | Canlı | `https://api.example.com/v1` | `wss://api.example.com/ws` |
+    | Sandbox | `https://sandbox.example.com/v1` | `wss://sandbox.example.com/ws` |
+
+    ## Kimlik doğrulama {#authentication}
+
+    HTTP istekleri API anahtarınızı `Authorization: Bearer …` header'ında taşır. WebSocket ise kısa ömürlü oturum `token`'ını kullanır; anahtar oyuncunun cihazına hiç ulaşmaz.
+
+    ## Hatalar {#errors}
+
+    HTTP hataları bilinen durum kodları ve `{ "error": "…" }` JSON gövdesiyle döner. WebSocket hataları bir `error` mesajı olarak gelir, ardından sunucu bağlantıyı kapatır (bkz. **Kapanış**).
+    :::
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+  - url: https://sandbox.example.com/v1
+    description: Sandbox
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: WebSocket session
+    x-i18n:
+      tr:
+        name: WebSocket oturumu
+        description: |
+          Oyuncunun cihazı ile Canlılık API'si arasındaki canlı bağlantı. Aşağıdaki mesajlar UTF-8 JSON text frame'leridir.
+
+          ## Bağlanma {#connecting}
+
+          ```
+          wss://api.example.com/ws?token={token}
+          ```
+
+          `token`, `POST /sessions` yanıtından gelir ve 10 dakika geçerlidir. Bağlantı açılınca sunucu `ready` gönderir; ondan önce kare göndermeyin.
+
+          ## Mesajlar {#messages}
+
+          Her mesaj `type` alanı olan bir JSON nesnesidir.
+
+          ### İstemciden sunucuya {#client-messages}
+
+          | `type` | Alanlar | Ne zaman |
+          | --- | --- | --- |
+          | `frame` | `image` (base64 JPEG, en fazla 640×480), `ts` (ms) | Saniyede 5–10 kare |
+          | `action_done` | `action` | Oyuncu istenen hareketi yapınca |
+          | `ping` | | Her 20 saniyede, bağlantıyı açık tutmak için |
+
+          ### Sunucudan istemciye {#server-messages}
+
+          | `type` | Alanlar | Anlamı |
+          | --- | --- | --- |
+          | `ready` | `expires_at` | Kare göndermeye başlayın |
+          | `instruction` | `action`: `turn_left`, `turn_right`, `blink`, `smile` | Oyuncuya bu hareketi gösterin |
+          | `progress` | `percent` | Arayüzü güncelleyin |
+          | `result` | `passed`, `score` | Kontrol bitti |
+          | `error` | `code`, `message` | Bir sorun oldu; ardından bağlantı kapanır |
+
+          ### Örnek akış {#example}
+
+          ```json
+          ← {"type":"ready","expires_at":"2026-10-14T10:10:00Z"}
+          → {"type":"frame","image":"/9j/4AAQ…","ts":1760436000120}
+          ← {"type":"instruction","action":"turn_left"}
+          → {"type":"action_done","action":"turn_left"}
+          ← {"type":"progress","percent":80}
+          ← {"type":"result","passed":true,"score":0.97}
+          ```
+
+          ## Kapanış {#closing}
+
+          | Kod | Anlamı |
+          | --- | --- |
+          | `1000` | Sonuç gönderildi, oturum bitti |
+          | `4001` | Token geçersiz ya da süresi dolmuş |
+          | `4008` | 30 saniye kare gelmedi |
+          | `4029` | Oturum başka bir cihazda açık |
+
+          Kopan bir bağlantıyı aynı `token` ile, süresi dolmadan yeniden açabilirsiniz; oturum kaldığı yerden devam eder.
+    description: |
+      The live connection between the player's device and the Liveness API. The messages below are UTF-8 JSON text frames.
+
+      ## Connecting {#connecting}
+
+      ```
+      wss://api.example.com/ws?token={token}
+      ```
+
+      The `token` comes from the `POST /sessions` response and is valid for 10 minutes. Once the socket opens, the server sends `ready`; do not send frames before that.
+
+      ## Messages {#messages}
+
+      Every message is a JSON object with a `type`.
+
+      ### Client to server {#client-messages}
+
+      | `type` | Fields | When |
+      | --- | --- | --- |
+      | `frame` | `image` (base64 JPEG, at most 640×480), `ts` (ms) | 5–10 frames per second |
+      | `action_done` | `action` | When the player completed the requested move |
+      | `ping` | | Every 20 seconds, to keep the connection open |
+
+      ### Server to client {#server-messages}
+
+      | `type` | Fields | Meaning |
+      | --- | --- | --- |
+      | `ready` | `expires_at` | Start sending frames |
+      | `instruction` | `action`: `turn_left`, `turn_right`, `blink`, `smile` | Show this move to the player |
+      | `progress` | `percent` | Update the interface |
+      | `result` | `passed`, `score` | The check is over |
+      | `error` | `code`, `message` | Something went wrong; the socket closes next |
+
+      ### Example exchange {#example}
+
+      ```json
+      ← {"type":"ready","expires_at":"2026-10-14T10:10:00Z"}
+      → {"type":"frame","image":"/9j/4AAQ…","ts":1760436000120}
+      ← {"type":"instruction","action":"turn_left"}
+      → {"type":"action_done","action":"turn_left"}
+      ← {"type":"progress","percent":80}
+      ← {"type":"result","passed":true,"score":0.97}
+      ```
+
+      ## Closing {#closing}
+
+      | Code | Meaning |
+      | --- | --- |
+      | `1000` | The result was sent; the session is over |
+      | `4001` | The token is invalid or expired |
+      | `4008` | No frame for 30 seconds |
+      | `4029` | The session is open on another device |
+
+      A dropped connection can be reopened with the same `token` before it expires; the session continues where it stopped.
+  - name: Sessions
+    x-i18n:
+      tr: { name: Oturumlar, description: "Canlılık kontrolünü başlatan ve sonucunu tutan kayıtlar." }
+    description: Records that start a liveness check and hold its result.
+  - name: Rate limits
+    x-traitTag: true
+    x-i18n:
+      tr:
+        name: İstek limitleri
+        description: |
+          Bu bölüm `x-traitTag` ile işaretli: işlemleri listelemeden yalnızca anlatımı gösterir. İşlemleri yine **Oturumlar** altında görünür.
+
+          | Kapsam | Limit |
+          | --- | --- |
+          | HTTP, API anahtarı başına | Dakikada 600 istek |
+          | WebSocket, oturum başına | Saniyede 15 kare |
+
+          Limit aşılınca HTTP `429` ve `Retry-After`, WebSocket ise `error` mesajı ve `4029` ile kapanış döner.
+    description: |
+      This section is marked `x-traitTag`: it shows its description without listing operations. Its operations still appear under **Sessions**.
+
+      | Scope | Limit |
+      | --- | --- |
+      | HTTP, per API key | 600 requests per minute |
+      | WebSocket, per session | 15 frames per second |
+
+      Above the limit, HTTP answers `429` with `Retry-After`; the WebSocket sends an `error` message and closes with `4029`.
+
+paths:
+  /sessions:
+    post:
+      tags: [Sessions, Rate limits]
+      operationId: sessions_create
+      summary: Create a session
+      x-i18n:
+        tr: { summary: Oturum oluştur }
+      description: Starts a liveness check and returns the WebSocket `token` for the player's device.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reference]
+              properties:
+                reference: { type: string, description: Your own ID for the player., example: player-48213 }
+                actions:
+                  type: array
+                  description: Moves to ask for, in order. Random when omitted.
+                  items: { type: string, enum: [turn_left, turn_right, blink, smile] }
+                  example: [turn_left, blink]
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+              example:
+                id: ses_8Hq2
+                reference: player-48213
+                status: pending
+                token: wst_3f9c1e7a2b
+                ws_url: wss://api.example.com/ws?token=wst_3f9c1e7a2b
+                expires_at: "2026-10-14T10:10:00Z"
+                result: null
+  /sessions/{id}:
+    get:
+      tags: [Sessions, Rate limits]
+      operationId: sessions_show
+      summary: Get a session
+      x-i18n:
+        tr: { summary: Oturumu getir }
+      description: Returns the session and, once the WebSocket sent `result`, its outcome.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, example: ses_8Hq2 }
+      responses:
+        "200":
+          description: The session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Session" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Session:
+      type: object
+      properties:
+        id: { type: string, example: ses_8Hq2 }
+        reference: { type: string, example: player-48213 }
+        status: { type: string, enum: [pending, connected, completed, expired], example: completed }
+        token: { type: string, description: WebSocket token, valid for 10 minutes., example: wst_3f9c1e7a2b }
+        ws_url: { type: string, format: uri, example: "wss://api.example.com/ws?token=wst_3f9c1e7a2b" }
+        expires_at: { type: string, format: date-time, example: "2026-10-14T10:10:00Z" }
+        result:
+          type: object
+          nullable: true
+          properties:
+            passed: { type: boolean, example: true }
+            score: { type: number, minimum: 0, maximum: 1, example: 0.97 }
