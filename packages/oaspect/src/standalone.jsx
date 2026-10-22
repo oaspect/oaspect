@@ -8,7 +8,10 @@
 //
 //   <oaspect-reference spec-url="/openapi.json"></oaspect-reference>
 //   <script src="https://cdn.jsdelivr.net/npm/oaspect" data-spec-url="/openapi.json"></script>
-import { ApiReference } from "@oaspect/react";
+//
+// Developer docs (Markdown) the same ways: Oaspect.docs("#docs", { docsUrl }),
+// <oaspect-docs docs-url="/dev-docs.json">, or data-docs-url on the script.
+import { ApiReference, DocsReference } from "@oaspect/react";
 import css from "@oaspect/react/styles.css";
 import { createRoot, hydrateRoot } from "react-dom/client";
 import { toProps } from "./props";
@@ -30,23 +33,36 @@ function injectStyles() {
  * Mounts the viewer into `target` (element or selector).
  * @returns {{ update(config: object): void, destroy(): void }}
  */
-export function init(target, config) {
+function mount(Component, name, target, config) {
   const element = typeof target === "string" ? document.querySelector(target) : target;
-  if (!element) throw new Error(`Oaspect.init: ${target} not found`);
+  if (!element) throw new Error(`Oaspect.${name}: ${target} not found`);
 
   injectStyles();
   const root = createRoot(element);
-  root.render(<ApiReference {...toProps(config)} />);
+  root.render(<Component {...toProps(config)} />);
 
-  return controls(root, config);
+  return controls(root, config, Component);
 }
 
-function controls(root, initial) {
+export function init(target, config) {
+  return mount(ApiReference, "init", target, config);
+}
+
+/**
+ * Mounts the developer docs viewer: { docsUrl } (a JSON bundle, e.g. from
+ * `oaspect docs bundle`) or { docs: { files: [{ path, content }] } }.
+ * @returns {{ update(config: object): void, destroy(): void }}
+ */
+export function docs(target, config) {
+  return mount(DocsReference, "docs", target, config);
+}
+
+function controls(root, initial, Component = ApiReference) {
   let current = initial;
   return {
     update(next) {
       current = { ...current, ...next };
-      root.render(<ApiReference {...toProps(current)} />);
+      root.render(<Component {...toProps(current)} />);
     },
     destroy() {
       root.unmount();
@@ -76,6 +92,8 @@ const ATTRIBUTES = {
   "proxy-url": "proxyUrl",
   "storage-prefix": "storagePrefix",
   "default-snippet": "defaultSnippet",
+  "docs-url": "docsUrl",
+  "edit-url": "editUrl",
   theme: "theme",
 };
 const FEATURES = {
@@ -84,6 +102,7 @@ const FEATURES = {
   "source-menu": "sourceMenu",
   "language-switcher": "languageSwitcher",
   "theme-toggle": "themeToggle",
+  search: "search",
 };
 
 function configFrom(get) {
@@ -102,63 +121,69 @@ function configFrom(get) {
   return config;
 }
 
-class OaspectReference extends HTMLElement {
-  static get observedAttributes() {
-    return [...Object.keys(ATTRIBUTES), "logo", "logo-dark", "logo-alt", "logo-label", "hide"];
-  }
+// <oaspect-reference> (property `spec`) and <oaspect-docs> (property `docs`):
+// attributes are the kebab-case options; changing one re-renders.
+function defineElement(tag, mountFn, dataKey) {
+  if (typeof customElements === "undefined" || customElements.get(tag)) return;
+  customElements.define(
+    tag,
+    class extends HTMLElement {
+      static get observedAttributes() {
+        return [...Object.keys(ATTRIBUTES), "logo", "logo-dark", "logo-alt", "logo-label", "hide"];
+      }
 
-  #instance = null;
-  #spec = undefined;
+      #instance = null;
+      #data = undefined;
 
-  /** OpenAPI document object (alternative to the spec-url attribute). */
-  set spec(value) {
-    this.#spec = value;
-    this.#render();
-  }
+      set [dataKey](value) {
+        this.#data = value;
+        this.#render();
+      }
 
-  get spec() {
-    return this.#spec;
-  }
+      get [dataKey]() {
+        return this.#data;
+      }
 
-  connectedCallback() {
-    this.#render();
-  }
+      connectedCallback() {
+        this.#render();
+      }
 
-  disconnectedCallback() {
-    this.#instance?.destroy();
-    this.#instance = null;
-  }
+      disconnectedCallback() {
+        this.#instance?.destroy();
+        this.#instance = null;
+      }
 
-  attributeChangedCallback() {
-    if (this.#instance) this.#render();
-  }
+      attributeChangedCallback() {
+        if (this.#instance) this.#render();
+      }
 
-  #render() {
-    if (!this.isConnected) return;
-    const config = { ...configFrom((name) => this.getAttribute(name)), ...(this.#spec ? { spec: this.#spec } : {}) };
-    if (this.#instance) this.#instance.update(config);
-    else this.#instance = init(this, config);
-  }
+      #render() {
+        if (!this.isConnected) return;
+        const config = { ...configFrom((name) => this.getAttribute(name)), ...(this.#data ? { [dataKey]: this.#data } : {}) };
+        if (this.#instance) this.#instance.update(config);
+        else this.#instance = mountFn(this, config);
+      }
+    },
+  );
 }
 
-if (typeof customElements !== "undefined" && !customElements.get("oaspect-reference")) {
-  customElements.define("oaspect-reference", OaspectReference);
-}
+defineElement("oaspect-reference", init, "spec");
+defineElement("oaspect-docs", docs, "docs");
 
-// <script src="oaspect.js" data-spec-url="…"> mounts itself into #oaspect,
-// or into a new element after the script.
+// <script src="oaspect.js" data-spec-url="…"> (or data-docs-url="…") mounts
+// itself into #oaspect, or into a new element after the script.
 const script = typeof document !== "undefined" ? document.currentScript : null;
-if (script?.dataset.specUrl) {
-  const mount = () => {
+if (script?.dataset.specUrl || script?.dataset.docsUrl) {
+  const auto = () => {
     let target = document.getElementById("oaspect");
     if (!target) {
       target = document.createElement("div");
       script.after(target);
     }
-    init(target, configFrom((name) => script.getAttribute(`data-${name}`)));
+    (script.dataset.docsUrl ? docs : init)(target, configFrom((name) => script.getAttribute(`data-${name}`)));
   };
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
-  else mount();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", auto);
+  else auto();
 }
 
 export { VERSION as version };

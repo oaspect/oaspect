@@ -32,23 +32,29 @@ const themeScript = (storagePrefix) => `(() => {
  *   title?: string,
  *   config?: object,            // Oaspect.init() config (specUrl, locale…)
  *   spec?: object,              // inlined OpenAPI document
+ *   docs?: object,              // inlined docs bundle: renders Oaspect.docs() instead of the API reference
+ *   docsMode?: boolean,         // Oaspect.docs() with config.docsUrl (no inlined bundle)
  *   script?: { src?: string, inline?: string },
  *   icon?: string,              // favicon URL (default: built-in icon)
  *   markup?: string,            // prerendered viewer HTML (hydrated instead of rendered)
  *   css?: string,               // stylesheet to inline, needed with markup
  * }} options
  */
-export function renderHtml({ title = "API Reference", config = {}, spec, script = {}, icon = DEFAULT_ICON, markup, css }) {
+export function renderHtml({ title = "API Reference", config = {}, spec, docs, docsMode = Boolean(docs), script = {}, icon = DEFAULT_ICON, markup, css }) {
   const scriptTag = script.inline
     ? `<script>${script.inline.replace(/<\/script/gi, "<\\/script")}</script>`
     : `<script src="${escapeHtml(script.src ?? "oaspect.js")}"></script>`;
-  const specTag = spec ? `\n    <script type="application/json" id="oaspect-spec">${scriptJson(spec)}</script>` : "";
-  const configExpression = spec
-    ? `Object.assign(${scriptJson(config)}, { spec: JSON.parse(document.getElementById("oaspect-spec").textContent) })`
+  // The inlined document (spec or docs bundle) sits in a JSON script tag and
+  // is parsed into the config.
+  const [dataKey, data] = docs ? ["docs", docs] : spec ? ["spec", spec] : [];
+  const specTag = data ? `\n    <script type="application/json" id="oaspect-${dataKey}">${scriptJson(data)}</script>` : "";
+  const configExpression = data
+    ? `Object.assign(${scriptJson(config)}, { ${dataKey}: JSON.parse(document.getElementById("oaspect-${dataKey}").textContent) })`
     : scriptJson(config);
+  const mount = docsMode ? "docs" : markup ? "hydrate" : "init";
   const head = [
     css ? `<style id="oaspect-styles">${css.replace(/<\/style/gi, "<\\/style")}</style>` : "",
-    config.theme ? "" : `<script>${themeScript(config.storagePrefix ?? "oaspect")}</script>`,
+    config.theme ? "" : `<script>${themeScript(config.storagePrefix ?? (docsMode ? "oaspect-docs" : "oaspect"))}</script>`,
   ]
     .filter(Boolean)
     .join("\n    ");
@@ -66,7 +72,7 @@ export function renderHtml({ title = "API Reference", config = {}, spec, script 
   <body>
     <div id="oaspect">${markup ?? ""}</div>${specTag}
     ${scriptTag}
-    <script>Oaspect.${markup ? "hydrate" : "init"}("#oaspect", ${configExpression});</script>
+    <script>Oaspect.${mount}("#oaspect", ${configExpression});</script>
   </body>
 </html>
 `;

@@ -27,6 +27,7 @@ function browser(body = '<div id="docs"></div>') {
   };
   window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
   window.HTMLElement.prototype.scrollIntoView = () => {};
+  window.scrollTo = () => {};
   window.eval(bundle);
   return { window, document: window.document, errors };
 }
@@ -62,6 +63,33 @@ describe("standalone bundle", () => {
     instance.destroy();
     await wait(10);
     expect(document.querySelector(".oaspect")).toBeNull();
+    expect(errors).toEqual([]);
+  });
+
+  test("docs renders a Markdown bundle with navigation and pages", async () => {
+    const { window, document, errors } = browser();
+    const files = [
+      { path: "README.md", content: "# Team docs\n\nSee [setup](guides/setup.md#install)." },
+      { path: "guides/setup.md", content: "# Setup\n\n## Install {#install}\nRun it." },
+    ];
+    const instance = window.Oaspect.docs("#docs", { docs: { files } });
+    await wait(50);
+    expect(document.querySelector("article h1").textContent).toBe("Team docs");
+    expect(document.querySelector('article a[href="#/guides/setup?id=install"]')).not.toBeNull();
+    window.location.hash = "#/guides/setup?id=install";
+    window.dispatchEvent(new window.HashChangeEvent("hashchange"));
+    await wait(50);
+    expect(document.querySelector("article h1").textContent).toBe("Setup");
+    expect(document.getElementById("doc/install")).not.toBeNull();
+    instance.destroy();
+    expect(errors).toEqual([]);
+  });
+
+  test("the <oaspect-docs> element renders from its docs property", async () => {
+    const { window, document, errors } = browser("<oaspect-docs></oaspect-docs>");
+    document.querySelector("oaspect-docs").docs = { files: [{ path: "README.md", content: "# Element docs" }] };
+    await wait(50);
+    expect(document.querySelector("oaspect-docs article h1").textContent).toBe("Element docs");
     expect(errors).toEqual([]);
   });
 

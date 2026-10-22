@@ -1,10 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { renderHtml } from "../src/html.js";
-import { serve } from "../src/serve.js";
+import { serve, serveDocs } from "../src/serve.js";
 
 const BIN = new URL("../bin/oaspect.mjs", import.meta.url).pathname;
 const SPEC = new URL("./bookstore.json", import.meta.url).pathname;
@@ -110,5 +110,56 @@ describe("external $refs", () => {
     expect(html).toContain('"x-oaspect-external"');
     expect(html).toContain("#/components/x-oaspect-external/Pet");
     expect(html).not.toContain("./schemas/pet.yaml");
+  });
+});
+
+describe("oaspect docs", () => {
+  function docsDir() {
+    const dir = mkdtempSync(join(tmpdir(), "oaspect-docs-"));
+    mkdirSync(join(dir, "guides"));
+    mkdirSync(join(dir, "node_modules", "x"), { recursive: true });
+    writeFileSync(join(dir, "README.md"), "# Team docs\n\nStart here.");
+    writeFileSync(join(dir, "guides", "setup.md"), "# Setup\n\n## Install\nRun it.");
+    writeFileSync(join(dir, "node_modules", "x", "README.md"), "# Ignored");
+    writeFileSync(join(dir, "notes.txt"), "not markdown");
+    return dir;
+  }
+
+  test("bundle writes the Markdown files as JSON, skipping node_modules", () => {
+    const dir = docsDir();
+    const out = join(dir, "..", `${Date.now()}-docs.json`);
+    expect(run("docs", "bundle", dir, "-o", out, "--edit-url", "https://example.com/edit/{path}")).toMatch(/2 files/);
+    const bundle = JSON.parse(readFileSync(out, "utf8"));
+    expect(bundle.files.map((file) => file.path)).toEqual(["README.md", "guides/setup.md"]);
+    expect(bundle.editUrl).toBe("https://example.com/edit/{path}");
+  });
+
+  test("build writes one page that mounts Oaspect.docs with the bundle inlined", () => {
+    const dir = docsDir();
+    const out = join(dir, "..", `${Date.now()}-docs.html`);
+    run("docs", "build", dir, "-o", out, "--title", "Team");
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('id="oaspect-docs"');
+    expect(html).toContain('Oaspect.docs("#oaspect"');
+    expect(html).toContain("Start here.");
+    expect(html).toContain("oaspect-docs:theme");
+  });
+
+  test("unknown subcommands and empty folders fail", () => {
+    expect(() => run("docs", "publish", ".")).toThrow(/build", "bundle" or "serve"/);
+    expect(() => run("docs", "bundle", mkdtempSync(join(tmpdir(), "oaspect-empty-")))).toThrow(/No Markdown files/);
+  });
+
+  test("serve answers the page and a fresh bundle on every request", async () => {
+    const dir = docsDir();
+    const { server, url } = await serveDocs({ dir, port: 0, bundlePath: BUNDLE });
+    try {
+      expect(await (await fetch(url)).text()).toContain('"docsUrl":"/docs.json"');
+      writeFileSync(join(dir, "added.md"), "# Added");
+      const bundle = await (await fetch(`${url}/docs.json`)).json();
+      expect(bundle.files.map((file) => file.path)).toContain("added.md");
+    } finally {
+      server.close();
+    }
   });
 });

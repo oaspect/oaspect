@@ -81,3 +81,45 @@ export async function serve({ source, port = 8080, host = "127.0.0.1", proxy = t
   const address = server.address();
   return { server, url: `http://${address.family === "IPv6" ? `[${address.address}]` : address.address}:${address.port}` };
 }
+
+/**
+ * `oaspect docs serve`: the developer docs of a folder, re-read on every
+ * request, so saved Markdown shows on reload.
+ * @param {{ dir: string, port?: number, host?: string, bundlePath: string, config?: object, bundle?: object }} options
+ */
+export async function serveDocs({ dir, port = 8080, host = "127.0.0.1", bundlePath, config = {}, bundle: bundleOptions = {} }) {
+  const { readDocs } = await import("./docs-files.js");
+  await readDocs(dir, bundleOptions); // fail fast on an empty folder
+
+  const server = createServer(async (req, res) => {
+    const { pathname } = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
+    try {
+      if (req.method === "GET" && (pathname === "/" || pathname === "/index.html")) {
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(renderHtml({ title: config.title ?? "Docs", config: { ...config, docsUrl: "/docs.json" }, script: { src: "/oaspect.js" }, docsMode: true }));
+      } else if (req.method === "GET" && pathname === "/docs.json") {
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(JSON.stringify(await readDocs(dir, bundleOptions)));
+      } else if (req.method === "GET" && pathname === "/oaspect.js") {
+        res.writeHead(200, { "Content-Type": "text/javascript; charset=utf-8" });
+        res.end(await readFile(bundlePath));
+      } else if (pathname === "/favicon.ico") {
+        res.writeHead(204);
+        res.end();
+      } else {
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end("Not found");
+      }
+    } catch (error) {
+      res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end(String(error.message ?? error));
+    }
+  });
+
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, host, resolve);
+  });
+  const address = server.address();
+  return { server, url: `http://${address.family === "IPv6" ? `[${address.address}]` : address.address}:${address.port}` };
+}

@@ -5,19 +5,25 @@ import { basename, dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { renderHtml } from "../src/html.js";
-import { serve } from "../src/serve.js";
+import { readDocs } from "../src/docs-files.js";
+import { serve, serveDocs } from "../src/serve.js";
 import { isUrl, loadSpec } from "../src/spec.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const bundlePath = resolve(root, "dist/oaspect.js");
 
-const HELP = `oaspect — interactive API reference for OpenAPI documents
+const HELP = `oaspect — interactive API reference for OpenAPI documents, and developer docs
 
 Usage:
   oaspect build <spec> [-o docs.html] [options]   Write a self-contained HTML file
   oaspect serve <spec> [--port 8080] [options]    Live preview with a "Try" proxy
 
+  oaspect docs build <dir> [-o docs.html]         Developer docs (a folder of Markdown) as one HTML file
+  oaspect docs bundle <dir> [-o docs.json]        The folder as a JSON bundle for Oaspect.docs({ docsUrl })
+  oaspect docs serve <dir> [--port 8080]          Live preview; files are re-read on every reload
+
 <spec> is a JSON or YAML file path or an http(s) URL (OpenAPI 3.x or Swagger 2.0).
+<dir> is a folder of .md files; _sidebar.md or SUMMARY.md sets the navigation.
 
 Options:
   -o, --output <file>       build: output file (default: <spec name>.html)
@@ -31,6 +37,7 @@ Options:
       --host <address>      serve: bind address (default: 127.0.0.1)
       --proxy-hosts <list>  serve: hosts the proxy may call (default: any, loopback only)
       --no-proxy            serve: disable the "Try" proxy
+      --edit-url <url>      docs: "Edit this page" link, {path} is the file's path
   -h, --help                show this help
   -v, --version             show the version
 `;
@@ -55,6 +62,7 @@ const { values, positionals } = (() => {
         "proxy-hosts": { type: "string" },
         "no-proxy": { type: "boolean" },
         "no-prerender": { type: "boolean" },
+        "edit-url": { type: "string" },
         help: { type: "boolean", short: "h" },
         version: { type: "boolean", short: "v" },
       },
@@ -70,13 +78,16 @@ if (values.version) {
   process.exit(0);
 }
 
-const [command, source] = positionals;
+const [command, ...rest] = positionals;
 if (values.help || !command) {
   console.log(HELP);
   process.exit(values.help ? 0 : 1);
 }
-if (!["build", "serve"].includes(command)) fail(`unknown command "${command}". Run oaspect --help.`);
-if (!source) fail(`${command} needs a spec file or URL.`);
+if (!["build", "serve", "docs"].includes(command)) fail(`unknown command "${command}". Run oaspect --help.`);
+const docsCommand = command === "docs" ? rest[0] : null;
+const source = command === "docs" ? rest[1] : rest[0];
+if (command === "docs" && !["build", "bundle", "serve"].includes(docsCommand)) fail('docs needs "build", "bundle" or "serve". Run oaspect --help.');
+if (!source) fail(command === "docs" ? `docs ${docsCommand} needs a folder of Markdown files.` : `${command} needs a spec file or URL.`);
 if (values.theme && !["light", "dark"].includes(values.theme)) fail("--theme must be light or dark.");
 
 const config = {
@@ -87,7 +98,25 @@ const config = {
 };
 
 try {
-  if (command === "build") {
+  if (command === "docs") {
+    const bundle = await readDocs(source, { title: values.title, editUrl: values["edit-url"] });
+    const stem = basename(resolve(source)) || "docs";
+    if (docsCommand === "bundle") {
+      const output = resolve(values.output ?? `${stem}.json`);
+      await writeFile(output, `${JSON.stringify(bundle)}\n`);
+      console.log(`Wrote ${output} (${bundle.files.length} files)`);
+    } else if (docsCommand === "build") {
+      const output = resolve(values.output ?? `${stem}.html`);
+      const html = renderHtml({ title: values.title ?? "Docs", config, docs: bundle, script: { inline: await readFile(bundlePath, "utf8") } });
+      await writeFile(output, html);
+      console.log(`Wrote ${output} (${bundle.files.length} files, ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB)`);
+    } else {
+      const port = values.port ? Number.parseInt(values.port, 10) : 8080;
+      if (!Number.isInteger(port) || port < 0 || port > 65535) fail("--port must be a number between 0 and 65535.");
+      const { url } = await serveDocs({ dir: source, port, host: values.host ?? "127.0.0.1", bundlePath, config, bundle: { title: values.title, editUrl: values["edit-url"] } });
+      console.log(`oaspect serving the docs in ${source} at ${url}`);
+    }
+  } else if (command === "build") {
     const spec = await loadSpec(source);
     const output = resolve(values.output ?? `${basename(isUrl(source) ? new URL(source).pathname : source, extname(source)) || "openapi"}.html`);
     // No "Source" menu or ?url= loading in a static file; there is no proxy
