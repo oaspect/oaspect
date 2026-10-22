@@ -33,6 +33,16 @@ Serves the reference at `http://127.0.0.1:8080` and reads `<spec>` again on ever
 
 The proxy allows any host while the server listens on a loopback address. To listen on the network (`--host 0.0.0.0`), list the hosts the proxy may call with `--proxy-hosts`, or turn it off with `--no-proxy`; the command refuses to expose an open relay.
 
+## docs
+
+```bash
+oaspect docs build <dir> [-o docs.html]
+oaspect docs bundle <dir> [-o docs.json]
+oaspect docs serve <dir> [--port 8080]
+```
+
+The same for a folder of Markdown files: one HTML file, a JSON bundle for `Oaspect.docs({ docsUrl })`, or a live preview. `--title`, `--edit-url`, `--locale`, `--theme` and `--logo` apply. See [Developer docs](dev-docs.md).
+
 ## Options
 
 | Option | Commands | Description |

@@ -38,7 +38,10 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 async function open(url, { theme = "light", width = 1440, height = 900, scale = 2 } = {}) {
   const page = await browser.newPage();
   await page.setViewport({ width, height, deviceScaleFactor: scale });
-  await page.evaluateOnNewDocument((value) => localStorage.setItem("oaspect:theme", value), theme);
+  await page.evaluateOnNewDocument((value) => {
+    localStorage.setItem("oaspect:theme", value);
+    localStorage.setItem("oaspect-docs:theme", value);
+  }, theme);
   await page.setRequestInterception(true);
   page.on("request", (request) => {
     if (request.url().includes("roastery.dev")) {
@@ -138,7 +141,7 @@ await shot(page, "locale-ar");
 await page.close();
 
 console.log("demos");
-for (const demo of ["roastery", "liveness", "bookstore", "petstore", "events", "auth"]) {
+for (const demo of ["roastery", "liveness", "dev-docs", "bookstore", "petstore", "events", "auth"]) {
   page = await open(page_(`demo/${demo}.html`), { width: 1280, height: 800, scale: 1 });
   await shot(page, `demo-${demo}`);
   await page.close();

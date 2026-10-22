@@ -10,6 +10,7 @@ oaspect turns an OpenAPI or Swagger document into an interactive API reference: 
 - **Schemas** as expandable trees: `$ref`, `allOf`, `oneOf`/`anyOf`, constraints, enums and examples.
 - **Localization**: the interface in English, Turkish and Arabic (right to left) or your own language, and translated documentation through `x-i18n` and `:::lang` blocks.
 - **Guide sections** for what is not an endpoint (a WebSocket protocol, a walkthrough): headings in descriptions become navigation entries with their own links. See [OpenAPI support](openapi.md#guide-sections).
+- **Developer docs**: the same viewer turns a folder of Markdown files into a documentation site with navigation, search and Mermaid diagrams. See [Developer docs](dev-docs.md).
 - OpenAPI 3.0 and 3.1, Swagger 2.0 (converted on load), JSON or YAML, references split across files.
 - Light and dark themes, a phone layout, deep links to every operation and model, and `⌘K` search.
 
@@ -59,6 +60,7 @@ export default function Docs() {
 | A React, Next.js or Remix app | `@oaspect/react` | [Frameworks](frameworks.md) |
 | Vue, Svelte, Angular or anything else | The web component | [Frameworks](frameworks.md#vue-svelte-and-other-frameworks) |
 | Only a spec file, and want a page | `oaspect build` | [CLI](cli.md) |
+| A folder of Markdown docs for your team | `oaspect docs` or `Oaspect.docs()` | [Developer docs](dev-docs.md) |
 | An API without CORS headers | A proxy from `oaspect/server` | [Server helpers](server.md) |
 
 ## Packages

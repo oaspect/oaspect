@@ -50,6 +50,9 @@ A lightweight alternative to Redoc and Scalar.
   entries with anchors, and tags without operations (or with `x-traitTag`)
   become title-and-prose sections, e.g. for a WebSocket protocol
   ([demo](https://oaspect.dev/demo/liveness.html))
+- **Developer docs**: a folder of Markdown (`docs/`) as a documentation site
+  with navigation, search, "On this page" and Mermaid diagrams, from
+  `oaspect docs` or `Oaspect.docs()` ([demo](https://oaspect.dev/demo/dev-docs.html))
 - Light/dark themes, mobile layout, deep links, ⌘K search
 - Styles scoped under `.oaspect`: drop it into any page without CSS conflicts
 - 138 KB gzipped as a single script, React included

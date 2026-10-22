@@ -6,12 +6,19 @@ import { join } from "node:path";
 import { parseMarkdown, safeUrl, tokenize } from "@oaspect/core";
 import { BASE_CSS, FAVICON, escapeHtml, footer, header, icon } from "./shared.mjs";
 
-// Sidebar order. Each entry is [file slug, title]; "index" is docs/index.html.
-export const NAV = [
-  ["Getting started", [["index", "Introduction"], ["installation", "Installation"], ["frameworks", "Frameworks"]]],
-  ["Guides", [["configuration", "Configuration"], ["theming", "Theming and branding"], ["localization", "Localization"], ["try-it", "Try it and authentication"], ["server", "Server helpers"], ["cli", "CLI"]]],
-  ["Reference", [["openapi", "OpenAPI support"], ["code-samples", "Code samples"], ["core", "@oaspect/core"], ["faq", "FAQ and limitations"]]],
-];
+// Sidebar order and labels come from docs/_sidebar.md (the same file the
+// docs viewer reads), as [section, [[slug, label]]].
+export function readNav(dir) {
+  const groups = [];
+  let current = null;
+  for (const line of readFileSync(join(dir, "_sidebar.md"), "utf8").split("\n")) {
+    const section = /^- ([^[\]]+)$/.exec(line);
+    const page = /^\s+- \[([^\]]+)\]\(([\w-]+)\.md\)/.exec(line);
+    if (section) groups.push((current = [section[1].trim(), []]));
+    else if (page && current) current[1].push([page[2], page[1]]);
+  }
+  return groups;
+}
 
 const EDIT_BASE = "https://github.com/oaspect/oaspect/edit/main/apps/site/docs/";
 
@@ -99,7 +106,7 @@ function blocks(list, toc) {
         case "heading": {
           const text = plain(block.children);
           if (block.level === 1) return "";
-          const id = slugify(text);
+          const id = block.id ?? slugify(text);
           if (block.level <= 3) toc.push({ level: block.level, id, text });
           return `<h${block.level} id="${id}"><a class="anchor" href="#${id}" aria-hidden="true" tabindex="-1">#</a>${inline(block.children)}</h${block.level}>`;
         }
@@ -227,6 +234,7 @@ const SCRIPT = `
 `;
 
 export function renderDocs({ dir, version }) {
+  const NAV = readNav(dir);
   const pages = NAV.flatMap(([section, items]) => items.map(([slug, title]) => ({ section, slug, title })));
   return pages.map((page, index) => {
     // {{version}} in the sources is the published version, so pinned

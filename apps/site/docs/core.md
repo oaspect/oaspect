@@ -98,6 +98,7 @@ console.log(client.build(request));
 | `selectLocale(blocks, locale, fallbacks)` | Keeps the language block that matches. |
 | `safeUrl(url, { image })` | Returns the URL when it is safe to link, else `null`. |
 | `localize(node, field, locale)` | The `x-i18n` translation of a field, or the field. |
+| `buildDocs(bundle, locale)`, `searchDocs(model, query)` | The developer docs model: pages, navigation (from `_sidebar.md` or the folders) and search. `resolveDocLink(fromPath, href)` and `docSlug(path)` map Markdown links and paths to routes. |
 | `tokenize(code, language)` | Syntax highlighting tokens (`{ type, text }`) for the sample languages and JSON. |
 
 This site's docs pages are rendered with `parseMarkdown` and `tokenize`.
