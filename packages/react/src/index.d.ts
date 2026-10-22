@@ -57,6 +57,59 @@ export interface ApiReferenceProps {
 
 export declare function ApiReference(props: ApiReferenceProps): ReactNode;
 
+/** A Markdown file of a docs bundle. `path` is relative to the docs root: "guides/setup.md". */
+export interface DocsFile {
+  path: string;
+  content: string;
+}
+
+/** What DocsReference shows: the Markdown files of a folder, and optional title and edit link. */
+export interface DocsBundle {
+  title?: string;
+  /** "Edit this page" link; "{path}" is replaced by the file's path. */
+  editUrl?: string;
+  files: DocsFile[];
+}
+
+export interface DocsReferenceFeatures {
+  /** Search box (⌘K). Default true. */
+  search?: boolean;
+  /** UI language switcher. Default true. */
+  languageSwitcher?: boolean;
+  /** Light/dark toggle. Default true. */
+  themeToggle?: boolean;
+}
+
+export interface DocsReferenceProps {
+  /** The docs as a bundle. Takes precedence over docsUrl. */
+  docs?: DocsBundle;
+  /** URL of a JSON docs bundle, e.g. from `oaspect docs bundle`. */
+  docsUrl?: string;
+  /** Header title; defaults to the bundle's title or the root README's first heading. */
+  title?: string;
+  logo?: ReactNode;
+  locale?: string;
+  defaultLocale?: string;
+  onLocaleChange?: (locale: string) => void;
+  messages?: Messages;
+  /** Prefix for localStorage keys. Default "oaspect-docs". */
+  storagePrefix?: string;
+  /** Overrides the bundle's editUrl. */
+  editUrl?: string;
+  features?: DocsReferenceFeatures;
+  theme?: "light" | "dark";
+}
+
+/**
+ * Developer docs: Markdown files as a documentation site, one page at a time,
+ * with navigation (from _sidebar.md / SUMMARY.md or the folders), search and
+ * "On this page". Routes are #/<page> and #/<page>?id=<heading>.
+ */
+export declare function DocsReference(props: DocsReferenceProps): ReactNode;
+
+/** Route of a page (and heading) in DocsReference: "#/guides/setup?id=install". */
+export declare function docRoute(slug: string, id?: string): string;
+
 /** Response header a spec endpoint sets to "fallback" when it served a fallback copy. */
 export declare const SPEC_SOURCE_HEADER: "x-oaspect-spec-source";
 

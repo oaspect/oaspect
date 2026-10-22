@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { renderToString } from "react-dom/server";
 import { describe, expect, test } from "vitest";
-import { ApiReference } from "../src/index";
+import { ApiReference, DocsReference } from "../src/index";
 
 const spec = JSON.parse(readFileSync(new URL("./bookstore.json", import.meta.url), "utf8"));
 
@@ -155,5 +155,30 @@ describe("guide sections", () => {
     expect(html).toContain('id="introduction/overview"');
     expect(html).toContain("Genel bakış");
     expect(html).toContain('id="introduction/ortamlar"');
+  });
+});
+
+describe("DocsReference (server render)", () => {
+  const docs = {
+    title: "Team docs",
+    editUrl: "https://example.com/edit/{path}",
+    files: [
+      { path: "README.md", content: "# Home\n\n## Overview\nSee [setup](guides/setup.md).\n\n## Rules\nText." },
+      { path: "guides/setup.md", content: "# Setup" },
+    ],
+  };
+
+  test("renders the first page, its outline and the navigation", () => {
+    const html = renderToString(<DocsReference docs={docs} />);
+    expect(html).toContain("<h1");
+    expect(html).toContain('id="doc/overview"');
+    expect(html).toContain('href="#/guides/setup"');
+    expect(html).toContain("On this page");
+    expect(html).toContain('href="https://example.com/edit/README.md"');
+    expect(html).toContain("Team docs");
+  });
+
+  test("uses the UI language", () => {
+    expect(renderToString(<DocsReference docs={docs} locale="tr" />)).toContain("Bu sayfada");
   });
 });

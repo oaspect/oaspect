@@ -5,10 +5,11 @@
 // dir="auto" so English spec text stays readable inside an RTL interface.
 // ":::lang xx" blocks are resolved for the current UI language.
 
-import { useMemo } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { useLocale } from "./i18n/context";
 import { anchorHeadings, parseMarkdown, safeUrl, selectLocale } from "@oaspect/core";
 import CodeBlock from "./code-block";
+import Mermaid from "./mermaid";
 
 // Fence info strings → tokenizer languages in src/lib/highlight.js.
 const CODE_LANGUAGES = {
@@ -52,7 +53,12 @@ const HEADING_STYLES = {
   6: "text-xs font-semibold uppercase tracking-wide",
 };
 
+// Lets a host rewrite links, e.g. the docs viewer turns "setup.md#install"
+// into its own route. Returns the href to use, or undefined for the default.
+export const LinkResolverContext = createContext(null);
+
 function Inline({ nodes }) {
+  const resolveLink = useContext(LinkResolverContext);
   return nodes.map((node, index) => {
     switch (node.type) {
       case "text":
@@ -84,7 +90,7 @@ function Inline({ nodes }) {
           </del>
         );
       case "link": {
-        const href = safeUrl(node.href);
+        const href = resolveLink?.(node.href) ?? safeUrl(node.href);
         if (!href) return <Inline key={index} nodes={node.children} />;
         const external = /^https?:/i.test(href);
         return (
@@ -111,17 +117,31 @@ function Inline({ nodes }) {
   });
 }
 
+// Headings of a whole page (the docs viewer): real levels, document sizes.
+const PAGE_HEADING_STYLES = {
+  1: "text-3xl font-bold tracking-tight",
+  2: "mt-10 border-b border-border pb-2 text-2xl font-semibold tracking-tight",
+  3: "mt-8 text-xl font-semibold",
+  4: "mt-6 text-lg font-semibold",
+  5: "text-base font-semibold",
+  6: "text-sm font-semibold uppercase tracking-wide",
+};
+
+const PageContext = createContext(false);
+
 function Blocks({ blocks, tight = false }) {
+  const page = useContext(PageContext);
   return blocks.map((block, index) => {
     switch (block.type) {
       case "heading": {
-        // Descriptions sit under the page's own h1/h2, so levels shift down.
-        const Tag = `h${Math.min(block.level + 2, 6)}`;
+        // Descriptions sit under the page's own h1/h2, so levels shift down;
+        // a docs page keeps them.
+        const Tag = page ? `h${block.level}` : `h${Math.min(block.level + 2, 6)}`;
         // Anchored headings are navigation targets: linkable, and watched by
         // the scroll spy (data-anchor).
         const anchored = block.anchor ? { id: block.anchor, "data-anchor": true } : {};
         return (
-          <Tag key={index} dir="auto" {...anchored} className={`${HEADING_STYLES[block.level]} scroll-mt-20 pt-2 text-foreground`}>
+          <Tag key={index} dir="auto" {...anchored} className={`${page ? PAGE_HEADING_STYLES[block.level] : HEADING_STYLES[block.level]} scroll-mt-20 pt-2 text-foreground`}>
             <Inline nodes={block.children} />
           </Tag>
         );
@@ -135,6 +155,7 @@ function Blocks({ blocks, tight = false }) {
           </p>
         );
       case "code":
+        if (block.language === "mermaid") return <Mermaid key={index} code={block.text} />;
         return (
           <CodeBlock
             key={index}
@@ -226,18 +247,23 @@ function Blocks({ blocks, tight = false }) {
 }
 
 // `anchorPrefix` turns the headings (h1–h3 in the source) into anchors
-// "<prefix>/<slug>" that the sidebar lists (outline.js).
-export default function Markdown({ source, className = "", anchorPrefix }) {
+// "<prefix>/<slug>" that the sidebar lists (outline.js). `blocks` takes
+// already parsed (and language-selected) Markdown instead of `source`;
+// `page` renders it as a document page (docs viewer) rather than a
+// description inside the reference.
+export default function Markdown({ source, blocks: parsed, className = "", anchorPrefix, page = false }) {
   const locale = useLocale();
   const blocks = useMemo(() => {
-    const selected = selectLocale(parseMarkdown(source), locale);
+    const selected = parsed ?? selectLocale(parseMarkdown(source), locale);
     return anchorPrefix ? anchorHeadings(selected, anchorPrefix) : selected;
-  }, [source, locale, anchorPrefix]);
+  }, [parsed, source, locale, anchorPrefix]);
   if (blocks.length === 0) return null;
 
   return (
-    <div className={`space-y-3 text-sm leading-relaxed ${className}`}>
-      <Blocks blocks={blocks} />
-    </div>
+    <PageContext.Provider value={page}>
+      <div className={`${page ? "space-y-4 text-base leading-7" : "space-y-3 text-sm leading-relaxed"} ${className}`}>
+        <Blocks blocks={blocks} />
+      </div>
+    </PageContext.Provider>
   );
 }
