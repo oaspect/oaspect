@@ -99,6 +99,22 @@ function pageTitle(blocks: MarkdownBlock[], path: string): string {
   return stem.replace(/[-_]+/g, " ").replace(/^\w/, (char) => char.toUpperCase());
 }
 
+// Many docs open with "## Title" instead of "# Title". When a page has no
+// level-1 heading and starts with a heading, that heading is the page title:
+// it becomes level 1, so it is shown as the title and not listed in the
+// page's outline.
+function promoteTitle(blocks: MarkdownBlock[]): MarkdownBlock[] {
+  const flat = blocks.flatMap((block) => (block.type === "lang-selected" ? block.children : [block]));
+  if (flat.some((block) => block.type === "heading" && block.level === 1)) return blocks;
+  const promote = (list: MarkdownBlock[]): MarkdownBlock[] => {
+    const [first, ...rest] = list;
+    if (!first) return list;
+    if (first.type === "lang-selected") return [{ ...first, children: promote(first.children) }, ...rest];
+    return first.type === "heading" ? [{ ...first, level: 1 }, ...rest] : list;
+  };
+  return promote(blocks);
+}
+
 // Navigation from a sidebar file: top-level items that are links are pages
 // at the top; items without a link (or "## Heading" lines) start a group of
 // the links nested under them / following them.
@@ -151,7 +167,7 @@ export function buildDocs(bundle: DocsBundle, locale = "en"): DocsModel {
   const pages = new Map<string, DocPage>();
   for (const file of files) {
     if (file === sidebar) continue;
-    const blocks = selectLocale(parseMarkdown(file.content), locale);
+    const blocks = promoteTitle(selectLocale(parseMarkdown(file.content), locale));
     pages.set(file.path, { slug: docSlug(file.path), path: file.path, title: pageTitle(blocks, file.path), blocks });
   }
 

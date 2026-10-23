@@ -41,6 +41,13 @@ describe("docs", () => {
     assert.ok(model.pages.some((page) => page.slug === "guides"), "unlisted pages stay reachable");
   });
 
+  test("a page opening with ## Title gets it as its title, not as an outline entry", () => {
+    const model = buildDocs({ files: [{ path: "api-clients.md", content: "## API Clients\n\nText.\n\n## Keys\nMore." }] });
+    const [page] = model.pages;
+    assert.equal(page.title, "API Clients");
+    assert.deepEqual(page.blocks.filter((block) => block.type === "heading").map((block) => block.level), [1, 2]);
+  });
+
   test("language blocks pick the page title", () => {
     assert.equal(buildDocs({ files }, "tr").pages.find((page) => page.slug === "guides/deploy").title, "Yayına alma");
   });
