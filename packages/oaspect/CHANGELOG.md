@@ -1,5 +1,16 @@
 # oaspect
 
+## 0.3.0
+
+### Minor Changes
+
+- 24cdfa0: Developer docs: the viewer shows a folder of Markdown files as a documentation site, one page at a time, with navigation (from `_sidebar.md`/`SUMMARY.md` or the folders), search across pages, "On this page", links between files, previous/next and "Edit this page". Use `oaspect docs build|bundle|serve <dir>`, `Oaspect.docs()`, `<oaspect-docs>` or `<DocsReference>`. Mermaid diagrams (```mermaid blocks) render in docs and in API descriptions, loaded from jsDelivr only when a page has one.
+
+### Patch Changes
+
+- Updated dependencies [24cdfa0]
+  - @oaspect/core@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
