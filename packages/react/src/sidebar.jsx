@@ -5,12 +5,13 @@ import { useLocale, useLocalized, useT } from "./i18n/context";
 import MethodBadge from "./method-badge";
 import { ChevronIcon } from "./icons";
 import { markdownOutline } from "./outline";
+import { filterOutline, fold, includesQuery } from "./search";
 
 // Matches the translated and the authored text (so English search terms
 // keep working in another UI language), descriptions and parameter names.
 // Descriptions are searched as plain text; ":::lang" markers do not matter.
 function matches(operation, query, localized) {
-  return [
+  return includesQuery([
     localized(operation, "summary"),
     operation.summary,
     localized(operation, "description"),
@@ -20,9 +21,7 @@ function matches(operation, query, localized) {
     operation.operationId,
     tagNames(operation),
     ...operation.parameters.map((parameter) => parameter.name),
-  ]
-    .filter(Boolean)
-    .some((value) => String(value).toLowerCase().includes(query));
+  ], query);
 }
 
 const tagNames = (operation) => operation.tags.join(" ");
@@ -31,20 +30,7 @@ const tagNames = (operation) => operation.tags.join(" ");
 const cssEscape = (value) => (globalThis.CSS?.escape ? CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&"));
 
 function matchesSchema(item, query, localized) {
-  return [item.name, localized(item.schema, "description"), item.schema.description, item.schema.title]
-    .filter(Boolean)
-    .some((value) => String(value).toLowerCase().includes(query));
-}
-
-// Outline entries whose heading (or one of its sections) contains the query.
-function filterOutline(entries, query) {
-  return entries
-    .map((entry) => {
-      if (entry.text.toLowerCase().includes(query)) return entry;
-      const sections = entry.sections.filter((section) => section.text.toLowerCase().includes(query));
-      return sections.length ? { ...entry, sections } : null;
-    })
-    .filter(Boolean);
+  return includesQuery([item.name, localized(item.schema, "description"), item.schema.description, item.schema.title], query);
 }
 
 const anchorsOf = (entry) => [entry.anchor, ...entry.sections.map((section) => section.anchor)];
@@ -57,7 +43,7 @@ export default function Sidebar({ model, activeAnchor, searchRef, onNavigate, sh
   const t = useT();
   const locale = useLocale();
   const localized = useLocalized();
-  const normalized = query.trim().toLowerCase();
+  const normalized = fold(query.trim());
 
   // Headings of the introduction: entries of their own after "Introduction".
   const introSource = localized(model.info, "description");
@@ -77,11 +63,16 @@ export default function Sidebar({ model, activeAnchor, searchRef, onNavigate, sh
   const tags = useMemo(() => {
     if (!normalized) return groups;
     return groups
-      .map((tag) => ({
-        ...tag,
-        operations: tag.operations.filter((op) => matches(op, normalized, localized)),
-        sections: filterOutline(tag.sections, normalized),
-      }))
+      // a tag whose name matches keeps all its operations and sections
+      .map((tag) =>
+        includesQuery([tag.label, localized(tag, "name"), tag.name], normalized)
+          ? tag
+          : {
+              ...tag,
+              operations: tag.operations.filter((op) => matches(op, normalized, localized)),
+              sections: filterOutline(tag.sections, normalized),
+            },
+      )
       .filter((tag) => tag.operations.length > 0 || tag.sections.length > 0);
   }, [groups, normalized, localized]);
 
