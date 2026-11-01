@@ -1,5 +1,11 @@
 # @oaspect/core
 
+## 0.3.2
+
+### Patch Changes
+
+- f831770: Sidebar search finds a guide section by the text under its heading, and a tag by its name (a guide tag without operations, such as Webhooks, was not found). Search ignores case and accents, so "imza" finds "İmza" and "dogrulama" finds "Doğrulama".
+
 ## 0.3.1
 
 ### Patch Changes
