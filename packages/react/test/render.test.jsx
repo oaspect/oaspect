@@ -182,3 +182,52 @@ describe("DocsReference (server render)", () => {
     expect(renderToString(<DocsReference docs={docs} locale="tr" />)).toContain("Bu sayfada");
   });
 });
+
+describe("print view (server render)", () => {
+  test("the API reference as a book: cover, contents, chapters, tables", () => {
+    const html = renderToString(<ApiReference spec={spec} view="print" print={{ organization: "Acme" }} />);
+    expect(html).toContain('class="oaspect-book"');
+    expect(html).toContain('class="cover"');
+    expect(html).toContain("Contents");
+    expect(html).toContain('href="#b-operation-books-list"');
+    expect(html).toContain('id="b-operation-books-list"');
+    expect(html).toContain("Chapter 1");
+    expect(html).toContain("Appendix A");
+    expect(html).toContain('<figure class="table"><figcaption><span class="label">Table');
+    expect(html).toContain("curl");
+    expect(html).toContain("Acme");
+  });
+
+  test("APA style leaves out the cover and adds the abstract", () => {
+    const html = renderToString(<ApiReference spec={spec} view="print" print={{ style: "apa", summary: "Short summary." }} locale="tr" />);
+    expect(html).not.toContain('class="cover"');
+    expect(html).toContain("Özet");
+    expect(html).toContain("Short summary.");
+    expect(html).toContain("İçindekiler");
+  });
+
+  test("docs as a book: a chapter per page, links between pages point inside the book", () => {
+    const docs = {
+      title: "Team docs",
+      files: [
+        { path: "README.md", content: "# Home\n\nIntro.\n\n## Overview\nSee [setup](guides/setup.md#install) and [site](https://example.com).\n\n```mermaid\ngraph LR\nA-->B\n```" },
+        { path: "guides/setup.md", content: "# Setup\n\n## Install {#install}\nText." },
+      ],
+    };
+    const html = renderToString(<DocsReference docs={docs} view="print" />);
+    expect(html).toContain("Team docs");
+    expect(html).toContain('id="b-page-guides-setup"');
+    expect(html).toContain('href="#b-p-guides-setup-install"');
+    expect(html).toContain('id="b-p-guides-setup-install"');
+    expect(html).toContain('data-mermaid="pending"');
+    expect(html).toContain("Figure");
+    expect(html).toContain("https://example.com");
+    expect(html).toContain("References");
+  });
+
+  test("the printer button can be turned off", () => {
+    expect(renderToString(<ApiReference spec={spec} />)).toContain('aria-label="Print view"');
+    expect(renderToString(<ApiReference spec={spec} features={{ print: false }} />)).not.toContain('aria-label="Print view"');
+  });
+});
+

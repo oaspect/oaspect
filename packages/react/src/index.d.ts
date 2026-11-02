@@ -15,6 +15,35 @@ export interface ApiReferenceFeatures {
   tryIt?: boolean;
   /** Models section and sidebar entries. Default true. */
   models?: boolean;
+  /** Printer button: the document as a printable book. Default true. */
+  print?: boolean;
+}
+
+/**
+ * Print mode: the document laid out as a book (cover, title page, contents
+ * with page numbers, chapters, references) or as an APA 7 paper, printed
+ * from the browser. Pages are laid out by Paged.js, loaded on first use.
+ */
+export interface PrintOptions {
+  /** "book" (default): a manual with a cover and running heads. "apa": APA 7. */
+  style?: "book" | "apa";
+  /** Default "A4". */
+  paper?: "A4" | "Letter";
+  /** Cover and heading color in the book style. Default "#16a34a". */
+  accent?: string;
+  /** Cover logo URL. */
+  logo?: string;
+  /** Overrides the document title on the cover and title page. */
+  title?: string;
+  subtitle?: string;
+  /** Small line above the title on the cover, e.g. "API reference". */
+  kicker?: string;
+  organization?: string;
+  author?: string;
+  /** Text for the date line; defaults to today in the UI language. */
+  date?: string;
+  /** Abstract (APA style); defaults to the first paragraph. */
+  summary?: string;
 }
 
 export interface ApiReferenceProps {
@@ -53,6 +82,9 @@ export interface ApiReferenceProps {
    * "auto" (default) does so for documents with more than 40 operations.
    */
   lazy?: boolean | "auto";
+  /** "print" opens in the print view. Default "reference". */
+  view?: "reference" | "print";
+  print?: PrintOptions;
 }
 
 export declare function ApiReference(props: ApiReferenceProps): ReactNode;
@@ -78,6 +110,8 @@ export interface DocsReferenceFeatures {
   languageSwitcher?: boolean;
   /** Light/dark toggle. Default true. */
   themeToggle?: boolean;
+  /** Printer button: the docs as a printable book. Default true. */
+  print?: boolean;
 }
 
 export interface DocsReferenceProps {
@@ -98,6 +132,9 @@ export interface DocsReferenceProps {
   editUrl?: string;
   features?: DocsReferenceFeatures;
   theme?: "light" | "dark";
+  /** "print" opens in the print view. Default "pages". */
+  view?: "pages" | "print";
+  print?: PrintOptions;
 }
 
 /**

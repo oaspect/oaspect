@@ -13,7 +13,8 @@ import Operation from "./operation";
 import Sidebar from "./sidebar";
 import { ModelContext, SettingsContext, SpecContext } from "./spec-context";
 import TryIt from "./try-it";
-import { LanguageToggle, ThemeToggle } from "./header-controls";
+import { LanguageToggle, PrintButton, ThemeToggle } from "./header-controls";
+import { apiBook, printMeta, printOptions, PrintView } from "./print/index";
 import { MenuIcon } from "./icons";
 
 // Header a spec endpoint can send to say it served a fallback copy, e.g.
@@ -128,6 +129,7 @@ const DEFAULT_FEATURES = {
   themeToggle: true,
   tryIt: true,
   models: true,
+  print: true,
 };
 
 function Viewer({
@@ -142,8 +144,12 @@ function Viewer({
   urlParam,
   theme: themeProp,
   lazy,
+  view,
+  print,
 }) {
   const features = { ...DEFAULT_FEATURES, ...featureOverrides };
+  const [printing, setPrinting] = useState(view === "print");
+  const [pageOptions, setPageOptions] = useState(() => printOptions(print));
   const storage = useMemo(() => createStorage(storagePrefix), [storagePrefix]);
   const rootRef = useRef(null);
   const locale = useLocale();
@@ -382,6 +388,10 @@ function Viewer({
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const openTry = useCallback((operation) => setTryOperation(operation), []);
   const heading = title ?? (model ? localized(model.info, "title") : "");
+  const book = useMemo(
+    () => (printing && model ? apiBook({ model, spec, t, localized, locale, meta: { ...(title ? { title } : {}), ...printMeta(print) } }) : null),
+    [printing, model, spec, t, localized, locale, title, print],
+  );
 
   return (
     <SpecContext.Provider value={spec}>
@@ -426,6 +436,7 @@ function Viewer({
                   onFile={loadFile}
                 />
               )}
+              {features.print && model && !printing && <PrintButton onClick={() => setPrinting(true)} />}
               {features.languageSwitcher && <LanguageToggle />}
               {features.themeToggle && <ThemeToggle theme={theme} onChange={changeTheme} />}
             </div>
@@ -445,6 +456,8 @@ function Viewer({
 
           {!model ? (
             !error && <p className="p-10 text-center text-sm text-muted-foreground">{t("spec.loading")}</p>
+          ) : book ? (
+            <PrintView book={book} options={pageOptions} onOptions={setPageOptions} onClose={() => setPrinting(false)} />
           ) : (
             <div className="flex">
               <aside
@@ -523,6 +536,8 @@ export function ApiReference({
   urlParam = "url",
   theme,
   lazy = "auto",
+  view,
+  print,
 }) {
   const merged = useMemo(() => mergeMessages(messages), [messages]);
 
@@ -540,6 +555,8 @@ export function ApiReference({
         urlParam={urlParam}
         theme={theme}
         lazy={lazy}
+        view={view}
+        print={print}
       />
     </LocaleProvider>
   );

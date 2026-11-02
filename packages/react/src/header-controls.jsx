@@ -2,7 +2,7 @@
 
 import { LOCALE_NAMES } from "./i18n/index";
 import { useAvailableLocales, useLocale, useSetLocale, useT } from "./i18n/context";
-import { MoonIcon, SunIcon } from "./icons";
+import { MoonIcon, PrinterIcon, SunIcon } from "./icons";
 
 // Header controls shared by the API reference and the docs viewer.
 
@@ -53,6 +53,21 @@ export function ThemeToggle({ theme, onChange }) {
     >
       <MoonIcon className="size-4 dark:hidden" />
       <SunIcon className="hidden size-4 dark:block" />
+    </button>
+  );
+}
+
+export function PrintButton({ onClick }) {
+  const t = useT();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={t("print.printView")}
+      title={t("print.printView")}
+      className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground"
+    >
+      <PrinterIcon className="size-4" />
     </button>
   );
 }

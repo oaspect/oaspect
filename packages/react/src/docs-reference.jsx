@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { anchorHeadings, buildDocs, headingsOf, resolveDocLink, searchDocs } from "@oaspect/core";
 import { LocaleProvider, useLocale, useT } from "./i18n/context";
 import { directionOf, mergeMessages } from "./i18n/index";
-import { LanguageToggle, ThemeToggle } from "./header-controls";
+import { LanguageToggle, PrintButton, ThemeToggle } from "./header-controls";
+import { docsBook, printMeta, printOptions, PrintView } from "./print/index";
 import { MenuIcon } from "./icons";
 import { scrollToAnchor } from "./lazy";
 import Markdown, { LinkResolverContext } from "./markdown";
@@ -19,7 +20,7 @@ import { createStorage } from "./storage";
 
 const HEADING_PREFIX = "doc";
 
-const DEFAULT_FEATURES = { search: true, languageSwitcher: true, themeToggle: true };
+const DEFAULT_FEATURES = { search: true, languageSwitcher: true, themeToggle: true, print: true };
 
 function parseRoute(hash) {
   const value = decodeURIComponent(String(hash ?? "").replace(/^#/, ""));
@@ -47,7 +48,7 @@ function pageOutline(page) {
     .map((heading) => ({ ...heading, id: heading.anchor.slice(HEADING_PREFIX.length + 1) }));
 }
 
-function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, features: featureProps, theme: themeProp }) {
+function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, features: featureProps, theme: themeProp, view, print }) {
   const t = useT();
   const locale = useLocale();
   const features = { ...DEFAULT_FEATURES, ...featureProps };
@@ -62,6 +63,8 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
   const [activeId, setActiveId] = useState(null);
   const searchRef = useRef(null);
   const contentRef = useRef(null);
+  const [printing, setPrinting] = useState(view === "print");
+  const [pageOptions, setPageOptions] = useState(() => printOptions(print));
 
   useEffect(() => {
     if (docs) {
@@ -127,6 +130,10 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
   const next = index >= 0 && index < model.pages.length - 1 ? model.pages[index + 1] : null;
   const edit = page && (editUrl ?? model?.editUrl) ? (editUrl ?? model.editUrl).replace("{path}", page.path) : null;
   const heading = title ?? model?.title ?? "";
+  const book = useMemo(
+    () => (printing && model ? docsBook({ model, t, locale, meta: { ...(title ? { title } : {}), ...printMeta(print) } }) : null),
+    [printing, model, t, locale, title, print],
+  );
 
   // A new page starts at its top, or at the heading in the route.
   useEffect(() => {
@@ -208,6 +215,7 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
           </a>
           {logo && heading && <span className="hidden truncate text-sm text-muted-foreground md:inline">{heading}</span>}
           <div className="ms-auto flex items-center gap-2">
+            {features.print && model && !printing && <PrintButton onClick={() => setPrinting(true)} />}
             {features.languageSwitcher && <LanguageToggle />}
             {features.themeToggle && <ThemeToggle theme={theme} onChange={changeTheme} />}
           </div>
@@ -217,6 +225,8 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
           <p className="p-8 text-sm text-red-700 dark:text-red-400">{t("docs.loadFailed", { error })}</p>
         ) : !model ? (
           <p className="p-8 text-sm text-muted-foreground">{t("spec.loading")}</p>
+        ) : book ? (
+          <PrintView book={book} options={pageOptions} onOptions={setPageOptions} onClose={() => setPrinting(false)} />
         ) : (
           <div className="flex">
             <aside
@@ -376,11 +386,13 @@ export function DocsReference({
   editUrl,
   features,
   theme,
+  view,
+  print,
 }) {
   const merged = useMemo(() => mergeMessages(messages), [messages]);
   return (
     <LocaleProvider locale={locale} defaultLocale={defaultLocale} onLocaleChange={onLocaleChange} messages={merged}>
-      <DocsViewer docs={docs} docsUrl={docsUrl} title={title} logo={logo} storagePrefix={storagePrefix} editUrl={editUrl} features={features} theme={theme} />
+      <DocsViewer docs={docs} docsUrl={docsUrl} title={title} logo={logo} storagePrefix={storagePrefix} editUrl={editUrl} features={features} theme={theme} view={view} print={print} />
     </LocaleProvider>
   );
 }

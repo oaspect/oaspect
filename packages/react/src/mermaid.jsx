@@ -9,7 +9,7 @@ import CodeBlock from "./code-block";
 const MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
 
 let loading = null;
-function loadMermaid() {
+export function loadMermaid() {
   loading ??= import(/* @vite-ignore */ /* webpackIgnore: true */ MERMAID_URL).then((module) => module.default);
   return loading;
 }
