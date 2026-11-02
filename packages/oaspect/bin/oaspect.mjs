@@ -17,10 +17,12 @@ const HELP = `oaspect — interactive API reference for OpenAPI documents, and d
 Usage:
   oaspect build <spec> [-o docs.html] [options]   Write a self-contained HTML file
   oaspect serve <spec> [--port 8080] [options]    Live preview with a "Try" proxy
+  oaspect print <spec> [-o book.html] [options]   HTML that opens as a printable book (cover, contents, chapters)
 
   oaspect docs build <dir> [-o docs.html]         Developer docs (a folder of Markdown) as one HTML file
   oaspect docs bundle <dir> [-o docs.json]        The folder as a JSON bundle for Oaspect.docs({ docsUrl })
   oaspect docs serve <dir> [--port 8080]          Live preview; files are re-read on every reload
+  oaspect docs print <dir> [-o book.html]         The docs as a printable book
 
 <spec> is a JSON or YAML file path or an http(s) URL (OpenAPI 3.x or Swagger 2.0).
 <dir> is a folder of .md files; _sidebar.md or SUMMARY.md sets the navigation.
@@ -38,6 +40,8 @@ Options:
       --proxy-hosts <list>  serve: hosts the proxy may call (default: any, loopback only)
       --no-proxy            serve: disable the "Try" proxy
       --edit-url <url>      docs: "Edit this page" link, {path} is the file's path
+      --print-style <name>  print: "book" (default) or "apa" (APA 7)
+      --paper <size>        print: "A4" (default) or "Letter"
   -h, --help                show this help
   -v, --version             show the version
 `;
@@ -63,6 +67,8 @@ const { values, positionals } = (() => {
         "no-proxy": { type: "boolean" },
         "no-prerender": { type: "boolean" },
         "edit-url": { type: "string" },
+        "print-style": { type: "string" },
+        paper: { type: "string" },
         help: { type: "boolean", short: "h" },
         version: { type: "boolean", short: "v" },
       },
@@ -83,18 +89,27 @@ if (values.help || !command) {
   console.log(HELP);
   process.exit(values.help ? 0 : 1);
 }
-if (!["build", "serve", "docs"].includes(command)) fail(`unknown command "${command}". Run oaspect --help.`);
+if (!["build", "serve", "print", "docs"].includes(command)) fail(`unknown command "${command}". Run oaspect --help.`);
 const docsCommand = command === "docs" ? rest[0] : null;
 const source = command === "docs" ? rest[1] : rest[0];
-if (command === "docs" && !["build", "bundle", "serve"].includes(docsCommand)) fail('docs needs "build", "bundle" or "serve". Run oaspect --help.');
+if (command === "docs" && !["build", "bundle", "serve", "print"].includes(docsCommand)) fail('docs needs "build", "bundle", "serve" or "print". Run oaspect --help.');
 if (!source) fail(command === "docs" ? `docs ${docsCommand} needs a folder of Markdown files.` : `${command} needs a spec file or URL.`);
 if (values.theme && !["light", "dark"].includes(values.theme)) fail("--theme must be light or dark.");
+if (values["print-style"] && !["book", "apa"].includes(values["print-style"])) fail("--print-style must be book or apa.");
+if (values.paper && !["A4", "Letter"].includes(values.paper)) fail("--paper must be A4 or Letter.");
 
 const config = {
   ...(values.title ? { title: values.title } : {}),
   ...(values.locale ? { defaultLocale: values.locale } : {}),
   ...(values.theme ? { theme: values.theme } : {}),
   ...(values.logo ? { logo: values.logo } : {}),
+};
+
+// Print files open in the print view; Paged.js lays out the pages in the browser.
+const printConfig = {
+  ...config,
+  view: "print",
+  print: { ...(values["print-style"] ? { style: values["print-style"] } : {}), ...(values.paper ? { paper: values.paper } : {}) },
 };
 
 try {
@@ -105,9 +120,10 @@ try {
       const output = resolve(values.output ?? `${stem}.json`);
       await writeFile(output, `${JSON.stringify(bundle)}\n`);
       console.log(`Wrote ${output} (${bundle.files.length} files)`);
-    } else if (docsCommand === "build") {
-      const output = resolve(values.output ?? `${stem}.html`);
-      const html = renderHtml({ title: values.title ?? "Docs", config, docs: bundle, script: { inline: await readFile(bundlePath, "utf8") } });
+    } else if (docsCommand === "build" || docsCommand === "print") {
+      const print = docsCommand === "print";
+      const output = resolve(values.output ?? `${stem}${print ? "-book" : ""}.html`);
+      const html = renderHtml({ title: values.title ?? "Docs", config: print ? printConfig : config, docs: bundle, script: { inline: await readFile(bundlePath, "utf8") } });
       await writeFile(output, html);
       console.log(`Wrote ${output} (${bundle.files.length} files, ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB)`);
     } else {
@@ -116,6 +132,17 @@ try {
       const { url } = await serveDocs({ dir: source, port, host: values.host ?? "127.0.0.1", bundlePath, config, bundle: { title: values.title, editUrl: values["edit-url"] } });
       console.log(`oaspect serving the docs in ${source} at ${url}`);
     }
+  } else if (command === "print") {
+    const spec = await loadSpec(source);
+    const output = resolve(values.output ?? `${basename(isUrl(source) ? new URL(source).pathname : source, extname(source)) || "openapi"}-book.html`);
+    const html = renderHtml({
+      title: values.title ?? spec.info?.title ?? "API Reference",
+      config: { ...printConfig, urlParam: null, features: { sourceMenu: false } },
+      spec,
+      script: { inline: await readFile(bundlePath, "utf8") },
+    });
+    await writeFile(output, html);
+    console.log(`Wrote ${output} (${(Buffer.byteLength(html) / 1024).toFixed(0)} KB)`);
   } else if (command === "build") {
     const spec = await loadSpec(source);
     const output = resolve(values.output ?? `${basename(isUrl(source) ? new URL(source).pathname : source, extname(source)) || "openapi"}.html`);

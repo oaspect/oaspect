@@ -83,7 +83,7 @@ export function hydrate(target, config) {
 }
 
 // Attribute (kebab-case) → config key. Booleans for features use
-// hide="try-it,models,source-menu,language-switcher,theme-toggle".
+// hide="try-it,models,source-menu,language-switcher,theme-toggle,print".
 const ATTRIBUTES = {
   "spec-url": "specUrl",
   title: "title",
@@ -95,6 +95,7 @@ const ATTRIBUTES = {
   "docs-url": "docsUrl",
   "edit-url": "editUrl",
   theme: "theme",
+  view: "view",
 };
 const FEATURES = {
   "try-it": "tryIt",
@@ -103,6 +104,7 @@ const FEATURES = {
   "language-switcher": "languageSwitcher",
   "theme-toggle": "themeToggle",
   search: "search",
+  print: "print",
 };
 
 function configFrom(get) {
@@ -113,6 +115,9 @@ function configFrom(get) {
   }
   const logo = get("logo");
   if (logo) config.logo = { light: logo, dark: get("logo-dark") ?? undefined, alt: get("logo-alt") ?? "", label: get("logo-label") ?? undefined };
+  const style = get("print-style");
+  const paper = get("paper");
+  if (style || paper) config.print = { ...(style ? { style } : {}), ...(paper ? { paper } : {}) };
   const hide = get("hide");
   if (hide) {
     config.features = {};
@@ -129,7 +134,7 @@ function defineElement(tag, mountFn, dataKey) {
     tag,
     class extends HTMLElement {
       static get observedAttributes() {
-        return [...Object.keys(ATTRIBUTES), "logo", "logo-dark", "logo-alt", "logo-label", "hide"];
+        return [...Object.keys(ATTRIBUTES), "logo", "logo-dark", "logo-alt", "logo-label", "hide", "print-style", "paper"];
       }
 
       #instance = null;

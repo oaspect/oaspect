@@ -23,6 +23,28 @@ describe("renderHtml", () => {
   });
 });
 
+describe("oaspect print", () => {
+  test("writes a page that opens in the print view", () => {
+    const out = join(mkdtempSync(join(tmpdir(), "oaspect-cli-")), "book.html");
+    run("print", SPEC, "-o", out, "--print-style", "apa", "--paper", "Letter");
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('"view":"print"');
+    expect(html).toContain('"print":{"style":"apa","paper":"Letter"}');
+    expect(html).toContain('id="oaspect-spec"');
+  });
+
+  test("docs print and option checks", () => {
+    const dir = mkdtempSync(join(tmpdir(), "oaspect-cli-"));
+    writeFileSync(join(dir, "README.md"), "# Home\n");
+    const out = join(dir, "book.html");
+    run("docs", "print", dir, "-o", out);
+    const html = readFileSync(out, "utf8");
+    expect(html).toContain('Oaspect.docs("#oaspect"');
+    expect(html).toContain('"view":"print"');
+    expect(() => run("print", SPEC, "--paper", "A3")).toThrow(/--paper must be A4 or Letter/);
+  });
+});
+
 describe("oaspect build", () => {
   test("writes a self-contained page", () => {
     const out = join(mkdtempSync(join(tmpdir(), "oaspect-cli-")), "docs.html");
@@ -146,7 +168,7 @@ describe("oaspect docs", () => {
   });
 
   test("unknown subcommands and empty folders fail", () => {
-    expect(() => run("docs", "publish", ".")).toThrow(/build", "bundle" or "serve"/);
+    expect(() => run("docs", "publish", ".")).toThrow(/build", "bundle", "serve" or "print"/);
     expect(() => run("docs", "bundle", mkdtempSync(join(tmpdir(), "oaspect-empty-")))).toThrow(/No Markdown files/);
   });
 
