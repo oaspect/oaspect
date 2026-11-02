@@ -1,6 +1,6 @@
 import { describe, test } from "vitest";
 import assert from "node:assert/strict";
-import { childrenOf, constraintsOf, deref, inferType, refName, resolvePointer, resolveSchema, typeLabel } from "../src/index";
+import { childrenOf, constraintsOf, deref, flattenSchema, inferType, refName, resolvePointer, resolveSchema, typeLabel } from "../src/index";
 
 const spec = {
   components: {
@@ -77,5 +77,26 @@ describe("schema", () => {
     assert.equal(choice.kind, "oneOf");
     assert.deepEqual(choice.variants.map((variant) => variant.name ?? variant.schema.type), ["Base", "string"]);
     assert.equal(childrenOf(spec, { type: "array", items: { type: "string" } }), null);
+  });
+
+  test("flattenSchema lists fields as dotted rows, stopping at cycles", () => {
+    const rows = flattenSchema(spec, {
+      type: "object",
+      required: ["items"],
+      properties: {
+        items: { $ref: "#/components/schemas/List" },
+        choice: { $ref: "#/components/schemas/Choice" },
+        status: { type: "string", enum: ["a", "b"], default: "a" },
+        self: { $ref: "#/components/schemas/Base" },
+      },
+    });
+    const byName = Object.fromEntries(rows.map((row) => [row.name, row]));
+    assert.equal(byName.items.required, true);
+    assert.equal(byName["items[].id"].depth, 1);
+    assert.equal(byName["choice (Base).id"].type, "integer");
+    assert.deepEqual(byName.status.notes, ['one of "a", "b"', 'default "a"']);
+    assert.equal(byName["self.id"].required, true);
+    const cyclic = { components: { schemas: { Node: { type: "object", properties: { next: { $ref: "#/components/schemas/Node" } } } } } };
+    assert.deepEqual(flattenSchema(cyclic, { $ref: "#/components/schemas/Node" }).map((row) => row.name), ["next"]);
   });
 });

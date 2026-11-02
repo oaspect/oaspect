@@ -101,3 +101,58 @@ export function childrenOf(spec: OpenAPIObject, schema: OpenAPIObject): SchemaCh
   }
   return null;
 }
+
+export interface SchemaRow {
+  /** Dotted path: "items[].bean_id", "payment (CardPayment).token". */
+  name: string;
+  depth: number;
+  type: string;
+  required: boolean;
+  description: string;
+  /** Constraints, enum values and the default, as short phrases. */
+  notes: string[];
+}
+
+/**
+ * A schema as table rows, one per field down to `maxDepth` levels: what a
+ * printed reference shows instead of an expandable tree.
+ */
+export function flattenSchema(spec: OpenAPIObject, input: unknown, maxDepth = 4): SchemaRow[] {
+  const rows: SchemaRow[] = [];
+  const visit = (schema: OpenAPIObject, prefix: string, depth: number, seen: Set<string>) => {
+    if (depth >= maxDepth) return;
+    const children = childrenOf(spec, schema);
+    if (!children) return;
+    if (children.kind === "items") return visit(children.schema, `${prefix}[]`, depth, seen);
+    if (children.kind === "map") return visit(children.schema, `${prefix}{}`, depth, seen);
+    if (children.kind === "oneOf" || children.kind === "anyOf") {
+      children.variants.forEach((variant, index) => {
+        const label = variant.name ?? variant.schema.title ?? `${children.kind} ${index + 1}`;
+        if (variant.name && seen.has(variant.name)) return;
+        const next = variant.name ? new Set(seen).add(variant.name) : seen;
+        visit(variant.schema, `${prefix} (${label})`, depth, next);
+      });
+      return;
+    }
+    const required = new Set<string>(Array.isArray(schema.required) ? schema.required : []);
+    for (const [key, value] of Object.entries<OpenAPIObject>(schema.properties ?? {})) {
+      const resolved = resolveSchema(spec, value);
+      const field = resolved.schema;
+      const name = prefix ? `${prefix}.${key}` : key;
+      const notes = [...constraintsOf(field)];
+      if (field.pattern) notes.push(`pattern ${field.pattern}`);
+      if (Array.isArray(field.enum)) notes.push(`one of ${field.enum.map((item: unknown) => JSON.stringify(item)).join(", ")}`);
+      if (field.default !== undefined) notes.push(`default ${JSON.stringify(field.default)}`);
+      if (field.nullable) notes.push("nullable");
+      if (field.readOnly) notes.push("read-only");
+      if (field.writeOnly) notes.push("write-only");
+      if (field.deprecated) notes.push("deprecated");
+      rows.push({ name, depth, type: typeLabel(spec, field), required: required.has(key), description: String(field.description ?? ""), notes });
+      if (resolved.name && seen.has(resolved.name)) continue;
+      visit(field, name, depth + 1, resolved.name ? new Set(seen).add(resolved.name) : seen);
+    }
+  };
+  const root = resolveSchema(spec, input);
+  visit(root.schema, "", 0, root.name ? new Set([root.name]) : new Set());
+  return rows;
+}

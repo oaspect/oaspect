@@ -2,7 +2,8 @@
 
 export * from "./types";
 export { deref, refName, resolvePointer } from "./refs";
-export { childrenOf, constraintsOf, inferType, resolveSchema, typeLabel } from "./schema";
+export { childrenOf, constraintsOf, flattenSchema, inferType, resolveSchema, typeLabel } from "./schema";
+export type { SchemaRow } from "./schema";
 export { exampleFromSchema, mediaExample, mediaExamples } from "./example";
 export { HTTP_METHODS, buildModel, linkTarget, modelAnchor, serverUrl, slugify, tagAnchor } from "./model";
 export { buildRequest, defaultBody, defaultForm, defaultValues, formEncode, isMultipart, jsonMediaType, parameterExample } from "./request";
