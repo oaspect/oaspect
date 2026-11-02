@@ -21,6 +21,8 @@ Every option, and how to pass it from JavaScript, React, HTML attributes or the 
 | `storagePrefix` | `string` | `"oaspect"` | Prefix of the keys oaspect keeps in `localStorage` and `sessionStorage`. |
 | `urlParam` | `string` or `null` | `"url"` | Query parameter that loads another document (`?url=https://…`). `null` turns it off. |
 | `lazy` | `boolean` or `"auto"` | `"auto"` | Render operations and models only when they come near the viewport. `"auto"` does it for documents with more than 40 operations. |
+| `view` | `"reference"` or `"print"` | `"reference"` | `"print"` opens the print view. See [Print and PDF](print.md). |
+| `print` | `object` | | Book style, paper, cover logo, subtitle, organization, date. See [Print and PDF](print.md#options). |
 
 ### Features
 
@@ -30,6 +32,7 @@ Every option, and how to pass it from JavaScript, React, HTML attributes or the 
 | `models` | `true` | The Models section and its sidebar entries |
 | `sourceMenu` | `true` | The Source menu (load another URL or a local file) |
 | `languageSwitcher` | `true` | The UI language menu |
+| `print` | `true` | The printer button (print view) |
 | `themeToggle` | `true` | The light/dark toggle |
 
 ```js
@@ -111,7 +114,9 @@ docs.update({ locale: "tr" });
 | `storage-prefix` | `storagePrefix` |
 | `default-snippet` | `defaultSnippet` |
 | `logo`, `logo-dark`, `logo-alt`, `logo-label` | `logo` (`light`, `dark`, `alt`, `label`) |
-| `hide` | `features`: a comma-separated list of `try-it`, `models`, `source-menu`, `language-switcher`, `theme-toggle` |
+| `view` | `view` |
+| `print-style`, `paper` | `print` (`style`, `paper`) |
+| `hide` | `features`: a comma-separated list of `try-it`, `models`, `source-menu`, `language-switcher`, `theme-toggle`, `print` |
 
 ```html
 <oaspect-reference

@@ -53,9 +53,12 @@ A lightweight alternative to Redoc and Scalar.
 - **Developer docs**: a folder of Markdown (`docs/`) as a documentation site
   with navigation, search, "On this page" and Mermaid diagrams, from
   `oaspect docs` or `Oaspect.docs()` ([demo](https://oaspect.dev/demo/dev-docs.html))
+- **Print and PDF**: both as a book (cover, contents with page numbers,
+  numbered chapters, tables and figures, references) or an APA 7 paper,
+  from the printer button or `oaspect print` ([demo](https://oaspect.dev/demo/roastery-book.html))
 - Light/dark themes, mobile layout, deep links, ⌘K search
 - Styles scoped under `.oaspect`: drop it into any page without CSS conflicts
-- 138 KB gzipped as a single script, React included
+- 155 KB gzipped as a single script, React included
 
 > Status: early (0.x). APIs may change before 1.0.
 

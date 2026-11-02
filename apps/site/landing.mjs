@@ -207,7 +207,7 @@ ${BASE_CSS}
     <div class="wrap">
       <div class="stats">
         <div><strong>30</strong><span>clients in 16 languages</span></div>
-        <div><strong>138 KB</strong><span>gzipped, React included</span></div>
+        <div><strong>155 KB</strong><span>gzipped, React included</span></div>
         <div><strong>3</strong><span>UI languages, RTL included</span></div>
         <div><strong>AA</strong><span>WCAG contrast and keyboard</span></div>
       </div>

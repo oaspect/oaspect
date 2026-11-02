@@ -33,26 +33,37 @@ Serves the reference at `http://127.0.0.1:8080` and reads `<spec>` again on ever
 
 The proxy allows any host while the server listens on a loopback address. To listen on the network (`--host 0.0.0.0`), list the hosts the proxy may call with `--proxy-hosts`, or turn it off with `--no-proxy`; the command refuses to expose an open relay.
 
+## print
+
+```bash
+oaspect print <spec> [-o book.html] [--print-style book|apa] [--paper A4|Letter]
+```
+
+Writes an HTML file that opens as a printable book: cover, contents with page numbers, a chapter per tag, the models as an appendix. Print it from the browser to get a PDF. See [Print and PDF](print.md).
+
 ## docs
 
 ```bash
 oaspect docs build <dir> [-o docs.html]
 oaspect docs bundle <dir> [-o docs.json]
 oaspect docs serve <dir> [--port 8080]
+oaspect docs print <dir> [-o book.html]
 ```
 
-The same for a folder of Markdown files: one HTML file, a JSON bundle for `Oaspect.docs({ docsUrl })`, or a live preview. `--title`, `--edit-url`, `--locale`, `--theme` and `--logo` apply. See [Developer docs](dev-docs.md).
+The same for a folder of Markdown files: one HTML file, a JSON bundle for `Oaspect.docs({ docsUrl })`, a live preview, or a printable book. `--title`, `--edit-url`, `--locale`, `--theme` and `--logo` apply. See [Developer docs](dev-docs.md).
 
 ## Options
 
 | Option | Commands | Description |
 | --- | --- | --- |
-| `-o`, `--output <file>` | build | Output file. Default: the spec's name with `.html`. |
+| `-o`, `--output <file>` | build, print | Output file. Default: the spec's name with `.html` (`-book.html` for print). |
 | `--title <text>` | both | Page and header title. Default: `info.title`. |
 | `--locale <code>` | both | Starting UI language (`en`, `tr`, `ar`…). Readers can still switch. |
 | `--theme <light\|dark>` | both | Force a theme. |
 | `--logo <url>` | both | Header logo image. |
 | `--no-prerender` | build | Render in the browser only. |
+| `--print-style <book\|apa>` | print | Book style. Default `book`. |
+| `--paper <A4\|Letter>` | print | Paper size. Default `A4`. |
 | `--port <number>` | serve | Port. Default `8080`. |
 | `--host <address>` | serve | Address to listen on. Default `127.0.0.1`. |
 | `--proxy-hosts <list>` | serve | Comma-separated hosts the proxy may call. |

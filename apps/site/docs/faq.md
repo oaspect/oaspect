@@ -4,7 +4,7 @@ Answers to common questions, and what oaspect does not do yet.
 
 ## How is oaspect different from Redoc, Swagger UI or Scalar?
 
-oaspect sits between them: a three-column reference like Redoc, a Try runner like Swagger UI and Scalar, in one 138 KB script. Its focus is documentation for readers in several languages (interface and spec translations, right to left included), a scoped stylesheet that does not fight the host page, and static prerendered output from the CLI. It is a viewer only: no hosted platform, no account, no telemetry.
+oaspect sits between them: a three-column reference like Redoc, a Try runner like Swagger UI and Scalar, in one 155 KB script. Its focus is documentation for readers in several languages (interface and spec translations, right to left included), a scoped stylesheet that does not fight the host page, and static prerendered output from the CLI. It is a viewer only: no hosted platform, no account, no telemetry.
 
 ## Try requests fail with a network error
 

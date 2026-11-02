@@ -9,6 +9,7 @@
   - [Try it and authentication](try-it.md)
   - [Server helpers](server.md)
   - [Developer docs](dev-docs.md)
+  - [Print and PDF](print.md)
   - [CLI](cli.md)
 - Reference
   - [OpenAPI support](openapi.md)

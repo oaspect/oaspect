@@ -14,7 +14,7 @@ oaspect turns an OpenAPI or Swagger document into an interactive API reference: 
 - OpenAPI 3.0 and 3.1, Swagger 2.0 (converted on load), JSON or YAML, references split across files.
 - Light and dark themes, a phone layout, deep links to every operation and model, and `⌘K` search.
 
-It ships as one 138 KB script (React included) for any web page, a React component, a CLI that writes static HTML, and server helpers for the parts a static page cannot do.
+It ships as one 155 KB script (React included) for any web page, a React component, a CLI that writes static HTML, and server helpers for the parts a static page cannot do.
 
 ## Quick start
 
