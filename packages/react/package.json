@@ -1,6 +1,6 @@
 {
   "name": "@oaspect/react",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Interactive API reference for OpenAPI documents, as a React component.",
   "license": "MIT",
   "homepage": "https://oaspect.dev",
