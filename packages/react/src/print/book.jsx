@@ -209,6 +209,9 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
   const sourceRef = useRef(null);
   const pagesRef = useRef(null);
   const [status, setStatus] = useState("preparing");
+  const [pageCount, setPageCount] = useState(0);
+  // The target the view has already been scrolled to; a new target or a new layout scrolls again.
+  const shownRef = useRef(null);
   const previewerRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -229,6 +232,7 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
   useEffect(() => {
     let cancelled = false;
     setStatus("preparing");
+    shownRef.current = null;
     (async () => {
       try {
         const Paged = await loadPaged();
@@ -274,12 +278,34 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
     };
   }, [manageHistory]);
 
-  const scrollTo = (id) => pagesRef.current?.querySelector(`[id="${String(id).replace(/["\\]/g, "")}"]`)?.scrollIntoView({ block: "start" });
+  const scrollTo = (id) => {
+    const element = pagesRef.current?.querySelector(`[id="${String(id).replace(/["\\]/g, "")}"]`);
+    element?.scrollIntoView({ block: "start" });
+    return Boolean(element);
+  };
 
-  // The part of the book the address points at, once the pages are laid out.
+  // Paged.js adds pages one by one: count them for the status line, and show
+  // the part of the book the address points at as soon as its page exists,
+  // without waiting for the rest of the book.
   useEffect(() => {
-    if (status === "ready" && target) scrollTo(target);
-  }, [status, target]);
+    const root = pagesRef.current;
+    if (!root) return undefined;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      setPageCount(root.querySelectorAll(".pagedjs_page").length);
+      if (target && shownRef.current !== target && scrollTo(target)) shownRef.current = target;
+    };
+    const observer = new MutationObserver(() => {
+      if (!frame) frame = requestAnimationFrame(update);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    update();
+    return () => {
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [target]);
 
   // Links in the pages: contents and cross references scroll to their target
   // without touching the address (the viewers route on the hash); web links
@@ -331,7 +357,7 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
           </select>
         </label>
         <span className="text-sm text-muted-foreground" role="status">
-          {status === "preparing" ? t("print.preparing") : status === "ready" ? "" : status}
+          {status === "preparing" ? (pageCount ? t("print.preparingPages", { count: pageCount }) : t("print.preparing")) : status === "ready" ? t("print.pages", { count: pageCount }) : status}
         </span>
         <button
           type="button"

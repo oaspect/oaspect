@@ -3,6 +3,9 @@
 import { LOCALE_NAMES } from "./i18n/index";
 import { useAvailableLocales, useLocale, useSetLocale, useT } from "./i18n/context";
 import { MoonIcon, PrinterIcon, SunIcon } from "./icons";
+import { loadPaged } from "./print/paged";
+
+const preloadPaged = () => loadPaged().catch(() => {});
 
 // Header controls shared by the API reference and the docs viewer.
 
@@ -63,6 +66,9 @@ export function PrintButton({ onClick }) {
     <button
       type="button"
       onClick={onClick}
+      // Paged.js is fetched on first use; start when the pointer or focus reaches the button.
+      onPointerEnter={preloadPaged}
+      onFocus={preloadPaged}
       aria-label={t("print.printView")}
       title={t("print.printView")}
       className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground"
