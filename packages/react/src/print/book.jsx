@@ -210,6 +210,9 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
   const pagesRef = useRef(null);
   const [status, setStatus] = useState("preparing");
   const [pageCount, setPageCount] = useState(0);
+  // With a target, the pages stay hidden until its page is laid out, so the
+  // reader lands there instead of watching the book grow from the cover.
+  const [waiting, setWaiting] = useState(Boolean(target));
   // The target the view has already been scrolled to; a new target or a new layout scrolls again.
   const shownRef = useRef(null);
   const previewerRef = useRef(null);
@@ -233,6 +236,7 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
     let cancelled = false;
     setStatus("preparing");
     shownRef.current = null;
+    if (target) setWaiting(true);
     (async () => {
       try {
         const Paged = await loadPaged();
@@ -249,9 +253,15 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
         const previewer = new Paged.Previewer();
         previewerRef.current = previewer;
         await previewer.preview(fragment, [{ "oaspect-book.css": printCss(options) }], pagesRef.current);
-        if (!cancelled) setStatus("ready");
+        if (!cancelled) {
+          setStatus("ready");
+          setWaiting(false);
+        }
       } catch (error) {
-        if (!cancelled) setStatus(error.message);
+        if (!cancelled) {
+          setStatus(error.message);
+          setWaiting(false);
+        }
       }
     })();
     return () => {
@@ -294,7 +304,10 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
     const update = () => {
       frame = 0;
       setPageCount(root.querySelectorAll(".pagedjs_page").length);
-      if (target && shownRef.current !== target && scrollTo(target)) shownRef.current = target;
+      if (target && shownRef.current !== target && scrollTo(target)) {
+        shownRef.current = target;
+        setWaiting(false);
+      }
     };
     const observer = new MutationObserver(() => {
       if (!frame) frame = requestAnimationFrame(update);
@@ -372,7 +385,22 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
         </button>
       </div>
       {/* Pages first: in-page links (contents) jump to the first element with the id. */}
-      <div ref={pagesRef} onClick={onPagesClick} className="oaspect-print-pages" lang={locale} dir={directionOf(locale)} />
+      {waiting && (
+        <div className="fixed inset-x-0 top-1/2 z-10 flex justify-center" role="presentation">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-5 py-3 text-sm shadow-lg">
+            <span className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+            {pageCount ? t("print.preparingPages", { count: pageCount }) : t("print.preparing")}
+          </div>
+        </div>
+      )}
+      <div
+        ref={pagesRef}
+        onClick={onPagesClick}
+        className="oaspect-print-pages"
+        style={waiting ? { visibility: "hidden" } : undefined}
+        lang={locale}
+        dir={directionOf(locale)}
+      />
       <div ref={sourceRef} hidden className="oaspect-book" lang={locale} dir={directionOf(locale)}>
         <Book book={book} style={options.style} />
       </div>
