@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { anchorHeadings, buildDocs, headingsOf, resolveDocLink, searchDocs } from "@oaspect/core";
+import { anchorHeadings, buildDocs, headingsOf, resolveDocAsset, resolveDocLink, searchDocs } from "@oaspect/core";
 import { LocaleProvider, useLocale, useT } from "./i18n/context";
 import { directionOf, mergeMessages } from "./i18n/index";
 import { LanguageToggle, PrintButton, ThemeToggle } from "./header-controls";
 import { docsBook, printMeta, printOptions, PrintView } from "./print/index";
 import { MenuIcon } from "./icons";
 import { scrollToAnchor } from "./lazy";
-import Markdown, { LinkResolverContext } from "./markdown";
+import Markdown, { ImageResolverContext, LinkResolverContext } from "./markdown";
 import { createStorage } from "./storage";
 
 // Developer docs viewer: a folder of Markdown files (bundled as
@@ -183,6 +183,8 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
     [page],
   );
 
+  const resolveImage = useCallback((src) => (page ? resolveDocAsset(page.path, src) : undefined), [page]);
+
   const navigate = useCallback(() => {
     setSidebarOpen(false);
     setQuery("");
@@ -306,7 +308,9 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
                 <article className="min-w-0 max-w-3xl flex-1">
                   {page ? (
                     <LinkResolverContext.Provider value={resolveLink}>
-                      <Markdown key={page.path} blocks={page.blocks} anchorPrefix={HEADING_PREFIX} page />
+                      <ImageResolverContext.Provider value={resolveImage}>
+                        <Markdown key={page.path} blocks={page.blocks} anchorPrefix={HEADING_PREFIX} page />
+                      </ImageResolverContext.Provider>
                     </LinkResolverContext.Provider>
                   ) : (
                     <p className="text-muted-foreground">{t("docs.notFound")}</p>

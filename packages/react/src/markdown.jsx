@@ -57,8 +57,13 @@ const HEADING_STYLES = {
 // into its own route. Returns the href to use, or undefined for the default.
 export const LinkResolverContext = createContext(null);
 
+// The same for image sources: the docs viewer resolves "../images/a.png"
+// against the page's own folder.
+export const ImageResolverContext = createContext(null);
+
 function Inline({ nodes }) {
   const resolveLink = useContext(LinkResolverContext);
+  const resolveImage = useContext(ImageResolverContext);
   return nodes.map((node, index) => {
     switch (node.type) {
       case "text":
@@ -106,7 +111,7 @@ function Inline({ nodes }) {
         );
       }
       case "image": {
-        const src = safeUrl(node.src, { image: true });
+        const src = safeUrl(resolveImage?.(node.src) ?? node.src, { image: true });
         if (!src) return node.alt;
         // Plain <img>: description images can come from any host.
         return <img key={index} src={src} alt={node.alt} title={node.title} loading="lazy" className="inline-block max-w-full rounded-lg" />;

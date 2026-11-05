@@ -2,7 +2,7 @@
 // numbered per chapter, tables and Mermaid diagrams numbered across the book
 // with a caption above (the nearest heading is the caption's title), and
 // external links collected for the references.
-import { plainText } from "@oaspect/core";
+import { plainText, safeUrl } from "@oaspect/core";
 
 /**
  * Numbering state shared by the whole book: tables, figures, references.
@@ -30,6 +30,37 @@ function collectLinks(nodes, state) {
     }
     if (node.children) collectLinks(node.children, state);
   }
+}
+
+/**
+ * Rewrites a page before numbering: `image(src)` maps image sources, and
+ * `keep(paragraph)` returning false drops a paragraph (e.g. hand-written
+ * "← Previous · Next →" lines, which mean nothing on paper).
+ */
+export function rewriteBlocks(blocks, { image = (src) => src, keep = () => true } = {}) {
+  const inline = (nodes) =>
+    nodes.map((node) =>
+      node.type === "image" ? { ...node, src: image(node.src) } : node.children ? { ...node, children: inline(node.children) } : node,
+    );
+  const visit = (list) =>
+    list.flatMap((block) => {
+      switch (block.type) {
+        case "paragraph":
+          return keep(block) ? [{ ...block, children: inline(block.children) }] : [];
+        case "heading":
+          return [{ ...block, children: inline(block.children) }];
+        case "table":
+          return [{ ...block, header: block.header.map(inline), rows: block.rows.map((row) => row.map(inline)) }];
+        case "blockquote":
+        case "lang-selected":
+          return [{ ...block, children: visit(block.children) }];
+        case "list":
+          return [{ ...block, items: block.items.map((item) => ({ ...item, children: visit(item.children) })) }];
+        default:
+          return [block];
+      }
+    });
+  return visit(blocks);
 }
 
 /**
@@ -70,9 +101,16 @@ export function numberBlocks(blocks, state, { chapter = null, shift = 0, section
             return { ...block, label: state.figures, caption };
           }
           return block;
-        case "paragraph":
+        case "paragraph": {
           collectLinks(block.children, state);
+          // A paragraph that is only an image is a figure; its alt text is the caption.
+          const content = block.children.filter((node) => !(node.type === "text" && !node.value.trim()));
+          if (content.length === 1 && content[0].type === "image") {
+            state.figures += 1;
+            return { type: "image-figure", image: content[0], label: state.figures, caption: content[0].alt || caption };
+          }
           return block;
+        }
         case "blockquote":
           return { ...block, children: visit(block.children) };
         case "list":
@@ -135,8 +173,10 @@ function Inline({ nodes, resolveLink }) {
         }
         return <span key={index}>{content}</span>;
       }
-      case "image":
-        return /^https?:/i.test(node.src) ? <img key={index} src={node.src} alt={node.alt} style={{ maxWidth: "100%" }} /> : node.alt;
+      case "image": {
+        const src = safeUrl(node.src, { image: true });
+        return src ? <img key={index} src={src} alt={node.alt} style={{ maxWidth: "100%" }} /> : node.alt;
+      }
       default:
         return null;
     }
@@ -161,6 +201,15 @@ export function BookBlocks({ blocks, t, resolveLink }) {
             <Inline nodes={block.children} resolveLink={resolveLink} />
           </p>
         );
+      case "image-figure": {
+        const src = safeUrl(block.image.src, { image: true });
+        return (
+          <figure key={index} className="figure">
+            <Caption kind="figure" label={block.label} title={block.caption} t={t} />
+            {src ? <img src={src} alt={block.image.alt} /> : <p>{block.image.alt}</p>}
+          </figure>
+        );
+      }
       case "code":
         if (block.language === "mermaid") {
           return (

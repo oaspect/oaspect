@@ -231,6 +231,8 @@ export function PrintView({ book, options, onOptions, onClose }) {
         const content = sourceRef.current.cloneNode(true);
         content.hidden = false;
         await renderDiagrams(content);
+        // Pages are measured once, so images must have their size first.
+        await Promise.all([...content.querySelectorAll("img")].map((img) => img.decode().catch(() => {})));
         if (cancelled) return;
         const fragment = document.createDocumentFragment();
         fragment.append(content);

@@ -56,6 +56,8 @@ const shared = (paper) => css`
   .oaspect-book pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0.8em 0; padding: 0.6em 0.8em; background: #f4f4f4; border-inline-start: 2pt solid #bbb; }
   .oaspect-book pre code { background: none; padding: 0; }
   .oaspect-book .figure svg { max-width: 100%; height: auto; }
+  .oaspect-book figure.figure { break-inside: avoid; }
+  .oaspect-book .figure img { display: block; max-width: 100%; max-height: 120mm; height: auto; margin: 0 auto; border: 0.5pt solid #ccc; }
   .oaspect-book .notes { color: #555; }
   .oaspect-book .endpoint { font-family: ui-monospace, Menlo, monospace; }
   .oaspect-book .endpoint .method { font-weight: 700; margin-inline-end: 0.5em; }

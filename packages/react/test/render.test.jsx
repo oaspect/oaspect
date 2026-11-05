@@ -229,5 +229,25 @@ describe("print view (server render)", () => {
     expect(renderToString(<ApiReference spec={spec} />)).toContain('aria-label="Print view"');
     expect(renderToString(<ApiReference spec={spec} features={{ print: false }} />)).not.toContain('aria-label="Print view"');
   });
+
+  test("docs book: relative images become figures, navigation lines are dropped, :::lang pages keep their sections", () => {
+    const docs = {
+      files: [
+        { path: "README.md", content: "# Home\n\nIntro." },
+        {
+          path: "docs/clients.md",
+          content:
+            ":::lang en\n# Clients\n\n[← Contents](../README.md)\n\n![Client list](../images/clients.png)\n\n## List\nText.\n\n[← Previous: Home](../README.md) · [Next →](../README.md)\n:::",
+        },
+      ],
+    };
+    const html = renderToString(<DocsReference docs={docs} view="print" />);
+    expect(html).toContain('src="images/clients.png"');
+    expect(html).toContain("Figure");
+    expect(html).toContain("Client list");
+    expect(html).not.toContain("Previous: Home");
+    expect(html).not.toContain("← Contents");
+    expect(html).toContain('id="b-p-docs-clients-list"');
+  });
 });
 
