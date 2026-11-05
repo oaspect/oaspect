@@ -18,5 +18,5 @@ export { convertSchema, convertSwagger2 } from "./convert";
 export { isOpenApiDocument, loadSpec, loadSpecText, normalizeSpec, parseSpec } from "./parse";
 export { EXTERNAL_KEY, hasExternalRefs, resolveExternalRefs } from "./external";
 export type { ExternalRefOptions } from "./external";
-export { buildDocs, docSlug, resolveDocLink, searchDocs } from "./docs";
+export { buildDocs, docSlug, resolveDocAsset, resolveDocLink, searchDocs } from "./docs";
 export type { DocPage, DocsBundle, DocsFile, DocsGroup, DocsModel, DocsSearchResult } from "./docs";

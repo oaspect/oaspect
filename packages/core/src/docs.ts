@@ -80,6 +80,16 @@ function normalizePath(path: string): string {
 const dirname = (path: string) => path.split("/").slice(0, -1).join("/");
 
 /**
+ * Resolves an image (or other file) a page refers to by a relative path:
+ * "../images/a.png" in "guides/setup.md" becomes "images/a.png", relative to
+ * the docs root. Absolute URLs, root paths and anchors are returned as they are.
+ */
+export function resolveDocAsset(fromPath: string, src: string): string {
+  if (/^[a-z][a-z0-9+.-]*:|^\/|^#/i.test(src)) return src;
+  return normalizePath(`${dirname(fromPath)}/${src}`);
+}
+
+/**
  * Resolves a link written in a page. A relative link to a Markdown file
  * ("../setup.md#install") becomes { slug, id }; anything else returns null.
  */

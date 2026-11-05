@@ -1,6 +1,6 @@
 import { describe, test } from "vitest";
 import assert from "node:assert/strict";
-import { buildDocs, docSlug, resolveDocLink, searchDocs } from "../src/index";
+import { buildDocs, docSlug, resolveDocAsset, resolveDocLink, searchDocs } from "../src/index";
 
 const files = [
   { path: "README.md", content: "# Acme API\n\nWelcome." },
@@ -70,5 +70,15 @@ describe("docs", () => {
     assert.match(searchDocs(model, "local database")[0].snippet, /truncate the local database/);
     assert.equal(searchDocs(buildDocs({ files }, "tr"), "yayina")[0].slug, "guides/deploy");
     assert.deepEqual(searchDocs(model, "nothing like this"), []);
+  });
+});
+
+describe("resolveDocAsset", () => {
+  test("relative paths resolve against the page's folder, others stay", () => {
+    assert.equal(resolveDocAsset("docs/clients.md", "../images/a.png"), "images/a.png");
+    assert.equal(resolveDocAsset("guides/setup.md", "img/b.png"), "guides/img/b.png");
+    assert.equal(resolveDocAsset("README.md", "./c.png"), "c.png");
+    assert.equal(resolveDocAsset("docs/a.md", "https://x.test/d.png"), "https://x.test/d.png");
+    assert.equal(resolveDocAsset("docs/a.md", "/e.png"), "/e.png");
   });
 });
