@@ -172,6 +172,8 @@ export function printCss({ style = "book", paper = "A4", accent = "#16a34a" } = 
 // preview shows the pages like sheets; printing shows only them.
 export const PREVIEW_CSS = css`
   .oaspect .oaspect-print-pages { background: #e5e7eb; color: #111; padding: 24px 0 48px; min-height: calc(100dvh - 3.5rem); }
+  .oaspect .oaspect-print-pages [id] { scroll-margin-top: 7.5rem; }
+  .oaspect .oaspect-print-pages a[href] { cursor: pointer; }
   .oaspect .oaspect-print-pages .pagedjs_page { background: #fff; box-shadow: 0 4px 18px rgb(0 0 0 / 0.18); margin: 0 auto 24px; }
   .oaspect[data-theme="dark"] .oaspect-print-pages { background: #18181b; }
   @media print {

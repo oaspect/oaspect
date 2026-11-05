@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useT } from "../i18n/context";
 import { directionOf } from "../i18n/index";
+import { ChevronIcon, CloseIcon } from "../icons";
 import { loadMermaid } from "../mermaid";
 import { Caption } from "./blocks";
 import { loadPaged } from "./paged";
@@ -209,6 +210,9 @@ export function PrintView({ book, options, onOptions, onClose }) {
   const pagesRef = useRef(null);
   const [status, setStatus] = useState("preparing");
   const previewerRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const close = () => (window.history.state?.oaspectPrint ? window.history.back() : onCloseRef.current());
 
   // Paged.js adds the book's stylesheet to <head>; a new run or leaving the
   // preview removes the previous one.
@@ -251,13 +255,56 @@ export function PrintView({ book, options, onOptions, onClose }) {
     };
   }, [book, options]);
 
+  // Leaving: the Back and close buttons, Esc, and the browser's back button
+  // (opening the view adds a history entry; leaving by button goes back to it).
+  useEffect(() => {
+    if (!window.history.state?.oaspectPrint) window.history.pushState({ ...window.history.state, oaspectPrint: true }, "");
+    const onPop = () => onCloseRef.current();
+    const onKey = (event) => {
+      if (event.key !== "Escape" || event.defaultPrevented || event.target?.tagName === "SELECT") return;
+      close();
+    };
+    window.addEventListener("popstate", onPop);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  // Links in the pages: contents and cross references scroll to their target
+  // without touching the address (the viewers route on the hash); web links
+  // open in a new tab.
+  const onPagesClick = (event) => {
+    const link = event.target.closest?.("a[href]");
+    if (!link) return;
+    const href = link.getAttribute("href");
+    if (href.startsWith("#")) {
+      event.preventDefault();
+      pagesRef.current.querySelector(`[id="${href.slice(1).replace(/["\\]/g, "")}"]`)?.scrollIntoView({ block: "start" });
+    } else if (/^https?:/i.test(href)) {
+      event.preventDefault();
+      window.open(href, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const control = "rounded-lg border border-border bg-background px-3 py-1.5 text-sm";
   return (
     <div>
       <style>{PREVIEW_CSS}</style>
       <div className="sticky top-14 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-background/90 px-4 py-2 backdrop-blur">
-        <button type="button" onClick={onClose} className={control}>
+        <button
+          type="button"
+          onClick={close}
+          title={`${t("print.back")} (Esc)`}
+          aria-keyshortcuts="Escape"
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+        >
+          <span className="block rotate-180 rtl:rotate-0">
+            <ChevronIcon />
+          </span>
           {t("print.back")}
+          <kbd className="ms-1 rounded border border-border px-1 text-[10px] text-muted-foreground">Esc</kbd>
         </button>
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           {t("print.style")}
@@ -284,9 +331,12 @@ export function PrintView({ book, options, onOptions, onClose }) {
         >
           {t("print.print")}
         </button>
+        <button type="button" onClick={close} aria-label={t("print.back")} title={`${t("print.back")} (Esc)`} className="rounded-lg border border-border p-2 text-muted-foreground hover:text-foreground">
+          <CloseIcon className="size-4" />
+        </button>
       </div>
       {/* Pages first: in-page links (contents) jump to the first element with the id. */}
-      <div ref={pagesRef} className="oaspect-print-pages" lang={locale} dir={directionOf(locale)} />
+      <div ref={pagesRef} onClick={onPagesClick} className="oaspect-print-pages" lang={locale} dir={directionOf(locale)} />
       <div ref={sourceRef} hidden className="oaspect-book" lang={locale} dir={directionOf(locale)}>
         <Book book={book} style={options.style} />
       </div>
