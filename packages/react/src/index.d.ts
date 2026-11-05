@@ -144,8 +144,11 @@ export interface DocsReferenceProps {
  */
 export declare function DocsReference(props: DocsReferenceProps): ReactNode;
 
-/** Route of a page (and heading) in DocsReference: "#/guides/setup?id=install". */
-export declare function docRoute(slug: string, id?: string): string;
+/**
+ * Route of a page (and heading) in DocsReference: "#/guides/setup?id=install".
+ * With `print`, the same place in the print view: "#/guides/setup?id=install&print".
+ */
+export declare function docRoute(slug: string, id?: string, print?: boolean): string;
 
 /** Response header a spec endpoint sets to "fallback" when it served a fallback copy. */
 export declare const SPEC_SOURCE_HEADER: "x-oaspect-spec-source";

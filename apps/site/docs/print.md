@@ -17,7 +17,11 @@ For an API reference:
 - **Appendix A, Models**: a field table per schema, with types, required fields, constraints and allowed values.
 - **References**: every web link in the descriptions, which the text also prints in parentheses.
 
-For developer docs, every page is a chapter in navigation order, and its `##` headings are numbered sections. Links between pages print the page they point to ("(p. 12)"). Mermaid diagrams are numbered figures.
+For developer docs, every page is a chapter in navigation order, and its `##` headings are numbered sections. Images are numbered figures with their alt text as the caption, and so are Mermaid diagrams. Links between pages print the page they point to ("(p. 12)"); lines that only link to other pages ("← Previous · Next →") are left out.
+
+The docs print view has an address, like the pages: `#/guides/setup?print` opens it at that chapter, `#/guides/setup?id=install&print` at that heading. Links followed in the book update it, so the browser's back button and a reload keep the place.
+
+Leave the print view with Esc, the Back button or the browser's back button.
 
 ## Two styles
 

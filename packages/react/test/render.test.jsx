@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { renderToString } from "react-dom/server";
 import { describe, expect, test } from "vitest";
-import { ApiReference, DocsReference } from "../src/index";
+import { ApiReference, DocsReference, docRoute } from "../src/index";
 
 const spec = JSON.parse(readFileSync(new URL("./bookstore.json", import.meta.url), "utf8"));
 
@@ -249,5 +249,11 @@ describe("print view (server render)", () => {
     expect(html).not.toContain("← Contents");
     expect(html).toContain('id="b-p-docs-clients-list"');
   });
-});
 
+  test("docRoute adds the print view to a page's address", () => {
+    expect(docRoute("docs/clients")).toBe("#/docs/clients");
+    expect(docRoute("docs/clients", "list")).toBe("#/docs/clients?id=list");
+    expect(docRoute("docs/clients", undefined, true)).toBe("#/docs/clients?print");
+    expect(docRoute("docs/clients", "list", true)).toBe("#/docs/clients?id=list&print");
+  });
+});

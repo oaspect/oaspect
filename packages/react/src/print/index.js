@@ -1,7 +1,7 @@
 // Print mode shared by the API reference and the docs viewer.
 export { PrintView } from "./book";
 export { apiBook } from "./api-book";
-export { docsBook } from "./docs-book";
+export { docsBook, docsBookTarget } from "./docs-book";
 
 export const PRINT_DEFAULTS = { style: "book", paper: "A4" };
 

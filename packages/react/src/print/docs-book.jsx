@@ -18,12 +18,17 @@ function isNavigation(paragraph) {
 const pageAnchor = (slug) => `page/${slug || "index"}`;
 const headingPrefix = (slug) => `p/${slug || "index"}`;
 
+/** Element id in the docs book of a page, or of a heading on it: what a docs route ({ slug, id }) opens. */
+export const docsBookTarget = (slug, id) => bookId(id ? `${headingPrefix(slug)}/${id}` : pageAnchor(slug));
+
 /**
  * @param {{ model, t, locale, meta? }} input — model from buildDocs()
  * @returns {{ meta, chapters, references }}
  */
 export function docsBook({ model, t, locale, meta = {} }) {
   const state = bookState();
+  // Element id → docs route, so a link followed in the book can update the address.
+  const routes = new Map();
   const chapters = model.pages.map((page, index) => {
     const number = index + 1;
     // The page title is the chapter title; the rest is its content.
@@ -39,6 +44,11 @@ export function docsBook({ model, t, locale, meta = {} }) {
       if (!target) return href;
       return target.id ? `#${headingPrefix(target.slug)}/${target.id}` : `#${pageAnchor(target.slug)}`;
     };
+    routes.set(docsBookTarget(page.slug), { slug: page.slug });
+    const prefix = `${headingPrefix(page.slug)}/`;
+    for (const block of blocks) {
+      if (block.type === "heading" && block.anchor?.startsWith(prefix)) routes.set(bookId(block.anchor), { slug: page.slug, id: block.anchor.slice(prefix.length) });
+    }
     const sections = [];
     for (const block of blocks) {
       if (block.type === "heading" && block.level === 2 && block.anchor) {
@@ -66,5 +76,6 @@ export function docsBook({ model, t, locale, meta = {} }) {
     },
     chapters,
     references: [...state.references],
+    routes,
   };
 }

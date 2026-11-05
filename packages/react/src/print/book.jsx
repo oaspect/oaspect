@@ -203,7 +203,7 @@ async function renderDiagrams(root) {
  * The print preview: a toolbar, then the book as pages. `book` is the data
  * from apiBook()/docsBook(); options are { style, paper, accent }.
  */
-export function PrintView({ book, options, onOptions, onClose }) {
+export function PrintView({ book, options, onOptions, onClose, target, onNavigate, manageHistory = true }) {
   const t = useT();
   const locale = useLocale();
   const sourceRef = useRef(null);
@@ -212,7 +212,7 @@ export function PrintView({ book, options, onOptions, onClose }) {
   const previewerRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  const close = () => (window.history.state?.oaspectPrint ? window.history.back() : onCloseRef.current());
+  const close = () => (manageHistory && window.history.state?.oaspectPrint ? window.history.back() : onCloseRef.current());
 
   // Paged.js adds the book's stylesheet to <head>; a new run or leaving the
   // preview removes the previous one.
@@ -257,9 +257,11 @@ export function PrintView({ book, options, onOptions, onClose }) {
 
   // Leaving: the Back and close buttons, Esc, and the browser's back button
   // (opening the view adds a history entry; leaving by button goes back to it).
+  // A viewer that keeps the print view in its address (the docs viewer's
+  // ?print) passes manageHistory={false} and handles leaving itself.
   useEffect(() => {
-    if (!window.history.state?.oaspectPrint) window.history.pushState({ ...window.history.state, oaspectPrint: true }, "");
-    const onPop = () => onCloseRef.current();
+    if (manageHistory && !window.history.state?.oaspectPrint) window.history.pushState({ ...window.history.state, oaspectPrint: true }, "");
+    const onPop = () => manageHistory && onCloseRef.current();
     const onKey = (event) => {
       if (event.key !== "Escape" || event.defaultPrevented || event.target?.tagName === "SELECT") return;
       close();
@@ -270,7 +272,14 @@ export function PrintView({ book, options, onOptions, onClose }) {
       window.removeEventListener("popstate", onPop);
       window.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [manageHistory]);
+
+  const scrollTo = (id) => pagesRef.current?.querySelector(`[id="${String(id).replace(/["\\]/g, "")}"]`)?.scrollIntoView({ block: "start" });
+
+  // The part of the book the address points at, once the pages are laid out.
+  useEffect(() => {
+    if (status === "ready" && target) scrollTo(target);
+  }, [status, target]);
 
   // Links in the pages: contents and cross references scroll to their target
   // without touching the address (the viewers route on the hash); web links
@@ -281,7 +290,8 @@ export function PrintView({ book, options, onOptions, onClose }) {
     const href = link.getAttribute("href");
     if (href.startsWith("#")) {
       event.preventDefault();
-      pagesRef.current.querySelector(`[id="${href.slice(1).replace(/["\\]/g, "")}"]`)?.scrollIntoView({ block: "start" });
+      // The viewer may turn it into an address (and scroll through `target`); otherwise scroll here.
+      if (!onNavigate?.(href.slice(1))) scrollTo(href.slice(1));
     } else if (/^https?:/i.test(href)) {
       event.preventDefault();
       window.open(href, "_blank", "noopener,noreferrer");

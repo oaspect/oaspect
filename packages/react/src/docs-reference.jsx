@@ -5,7 +5,7 @@ import { anchorHeadings, buildDocs, headingsOf, resolveDocAsset, resolveDocLink,
 import { LocaleProvider, useLocale, useT } from "./i18n/context";
 import { directionOf, mergeMessages } from "./i18n/index";
 import { LanguageToggle, PrintButton, ThemeToggle } from "./header-controls";
-import { docsBook, printMeta, printOptions, PrintView } from "./print/index";
+import { docsBook, docsBookTarget, printMeta, printOptions, PrintView } from "./print/index";
 import { MenuIcon } from "./icons";
 import { scrollToAnchor } from "./lazy";
 import Markdown, { ImageResolverContext, LinkResolverContext } from "./markdown";
@@ -26,11 +26,16 @@ function parseRoute(hash) {
   const value = decodeURIComponent(String(hash ?? "").replace(/^#/, ""));
   if (!value.startsWith("/")) return { slug: "" };
   const [path, query = ""] = value.slice(1).split("?");
-  const id = new URLSearchParams(query).get("id") ?? undefined;
-  return { slug: path.replace(/\/+$/, ""), ...(id ? { id } : {}) };
+  const params = new URLSearchParams(query);
+  const id = params.get("id") ?? undefined;
+  return { slug: path.replace(/\/+$/, ""), ...(id ? { id } : {}), ...(params.has("print") ? { print: true } : {}) };
 }
 
-export const docRoute = (slug, id) => `#/${slug}${id ? `?id=${encodeURIComponent(id)}` : ""}`;
+/** Route of a page (and heading): "#/guides/setup?id=install"; with `print`, the same place in the print view. */
+export const docRoute = (slug, id, print = false) => {
+  const query = [id ? `id=${encodeURIComponent(id)}` : "", print ? "print" : ""].filter(Boolean).join("&");
+  return `#/${slug}${query ? `?${query}` : ""}`;
+};
 
 function systemTheme() {
   try {
@@ -63,7 +68,9 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
   const [activeId, setActiveId] = useState(null);
   const searchRef = useRef(null);
   const contentRef = useRef(null);
-  const [printing, setPrinting] = useState(view === "print");
+  // The print view lives in the address (#/page?print) like the pages do;
+  // view="print" opens it without one.
+  const [printForced, setPrintForced] = useState(view === "print");
   const [pageOptions, setPageOptions] = useState(() => printOptions(print));
 
   useEffect(() => {
@@ -130,6 +137,7 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
   const next = index >= 0 && index < model.pages.length - 1 ? model.pages[index + 1] : null;
   const edit = page && (editUrl ?? model?.editUrl) ? (editUrl ?? model.editUrl).replace("{path}", page.path) : null;
   const heading = title ?? model?.title ?? "";
+  const printing = Boolean(route.print) || printForced;
   const book = useMemo(
     () => (printing && model ? docsBook({ model, t, locale, meta: { ...(title ? { title } : {}), ...printMeta(print) } }) : null),
     [printing, model, t, locale, title, print],
@@ -137,11 +145,11 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
 
   // A new page starts at its top, or at the heading in the route.
   useEffect(() => {
-    if (!page) return;
+    if (!page || printing) return;
     if (route.id) scrollToAnchor(`${HEADING_PREFIX}/${route.id}`);
     else window.scrollTo(0, 0);
     setActiveId(route.id ?? null);
-  }, [page, route.id]);
+  }, [page, route.id, printing]);
 
   useEffect(() => {
     if (page) document.title = page.title === heading ? heading : `${page.title} · ${heading}`;
@@ -185,6 +193,23 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
 
   const resolveImage = useCallback((src) => (page ? resolveDocAsset(page.path, src) : undefined), [page]);
 
+  const openPrint = () => {
+    window.location.hash = docRoute(page?.slug ?? route.slug, route.id, true);
+  };
+  const closePrint = () => {
+    setPrintForced(false);
+    if (route.print) window.location.replace(docRoute(route.slug, route.id));
+  };
+  // A link followed in the book moves the address to that page or heading.
+  const navigatePrint = (target) => {
+    const next = book?.routes.get(target);
+    if (!next) return false;
+    const hash = docRoute(next.slug, next.id, true);
+    if (window.location.hash === hash) return false;
+    window.location.hash = hash;
+    return true;
+  };
+
   const navigate = useCallback(() => {
     setSidebarOpen(false);
     setQuery("");
@@ -217,7 +242,7 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
           </a>
           {logo && heading && <span className="hidden truncate text-sm text-muted-foreground md:inline">{heading}</span>}
           <div className="ms-auto flex items-center gap-2">
-            {features.print && model && !printing && <PrintButton onClick={() => setPrinting(true)} />}
+            {features.print && model && !printing && <PrintButton onClick={openPrint} />}
             {features.languageSwitcher && <LanguageToggle />}
             {features.themeToggle && <ThemeToggle theme={theme} onChange={changeTheme} />}
           </div>
@@ -228,7 +253,15 @@ function DocsViewer({ docs, docsUrl, title, logo, storagePrefix, editUrl, featur
         ) : !model ? (
           <p className="p-8 text-sm text-muted-foreground">{t("spec.loading")}</p>
         ) : book ? (
-          <PrintView book={book} options={pageOptions} onOptions={setPageOptions} onClose={() => setPrinting(false)} />
+          <PrintView
+            book={book}
+            options={pageOptions}
+            onOptions={setPageOptions}
+            onClose={closePrint}
+            onNavigate={navigatePrint}
+            manageHistory={false}
+            target={route.print ? docsBookTarget(route.slug, route.id) : undefined}
+          />
         ) : (
           <div className="flex">
             <aside
