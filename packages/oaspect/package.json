@@ -29,6 +29,7 @@
   "files": [
     "bin",
     "dist",
+    "src/docs-files.js",
     "src/html.js",
     "src/serve.js",
     "src/server.js",

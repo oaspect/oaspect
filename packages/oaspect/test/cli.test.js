@@ -23,6 +23,23 @@ describe("renderHtml", () => {
   });
 });
 
+describe("npm package", () => {
+  // oaspect#8: the CLI imported a file that "files" left out of the package.
+  test("every module the CLI and server entry import is published", () => {
+    const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    const published = (path) => pkg.files.some((entry) => path === entry || path.startsWith(`${entry}/`));
+    const importsOf = (file) => [...readFileSync(new URL(`../${file}`, import.meta.url), "utf8").matchAll(/from "\.\.?\/([^"]+)"/g)].map((match) => match[1]);
+    const missing = [];
+    for (const [file, base] of [["bin/oaspect.mjs", ""], ["src/serve.js", "src/"], ["src/server.js", "src/"], ["src/html.js", "src/"]]) {
+      for (const target of importsOf(file)) {
+        const path = (file.startsWith("bin/") ? target : base + target).replace(/^\.\.\//, "");
+        if (!published(path)) missing.push(`${file} -> ${path}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+});
+
 describe("oaspect print", () => {
   test("writes a page that opens in the print view", () => {
     const out = join(mkdtempSync(join(tmpdir(), "oaspect-cli-")), "book.html");
