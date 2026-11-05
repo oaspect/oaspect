@@ -65,6 +65,7 @@ const messages = {
   "print.name": "Name",
   "print.no": "No",
   "print.note": "Note.",
+  "print.pageAbbr": "p.",
   "print.pages": "{count} pages",
   "print.paper": "Paper",
   "print.parameters": "Parameters",

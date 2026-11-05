@@ -252,7 +252,7 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
         pagesRef.current.innerHTML = "";
         const previewer = new Paged.Previewer();
         previewerRef.current = previewer;
-        await previewer.preview(fragment, [{ "oaspect-book.css": printCss(options) }], pagesRef.current);
+        await previewer.preview(fragment, [{ "oaspect-book.css": printCss({ ...options, pageAbbr: t("print.pageAbbr") }) }], pagesRef.current);
         if (!cancelled) {
           setStatus("ready");
           setWaiting(false);
@@ -267,7 +267,7 @@ export function PrintView({ book, options, onOptions, onClose, target, onNavigat
     return () => {
       cancelled = true;
     };
-  }, [book, options]);
+  }, [book, options, t]);
 
   // Leaving: the Back and close buttons, Esc, and the browser's back button
   // (opening the view adds a history entry; leaving by button goes back to it).

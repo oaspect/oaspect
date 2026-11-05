@@ -65,6 +65,7 @@ const messages = {
   "print.name": "الاسم",
   "print.no": "لا",
   "print.note": "ملاحظة.",
+  "print.pageAbbr": "ص.",
   "print.pages": "{count} صفحة",
   "print.paper": "الورق",
   "print.parameters": "المعاملات",

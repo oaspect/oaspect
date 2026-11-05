@@ -65,6 +65,7 @@ const messages = {
   "print.name": "Ad",
   "print.no": "Hayır",
   "print.note": "Not.",
+  "print.pageAbbr": "s.",
   "print.pages": "{count} sayfa",
   "print.paper": "Kâğıt",
   "print.parameters": "Parametreler",

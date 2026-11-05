@@ -19,7 +19,7 @@ const css = String.raw;
 const NONE = "content: none;";
 const noMargins = `@top-left { ${NONE} } @top-center { ${NONE} } @top-right { ${NONE} } @bottom-left { ${NONE} } @bottom-center { ${NONE} } @bottom-right { ${NONE} }`;
 
-const shared = (paper) => css`
+const shared = (paper, pageAbbr) => css`
   .oaspect-book { color: #111; }
   .oaspect-book * { box-sizing: border-box; }
   .oaspect-book a { color: inherit; text-decoration: none; }
@@ -63,7 +63,7 @@ const shared = (paper) => css`
   .oaspect-book .endpoint .method { font-weight: 700; margin-inline-end: 0.5em; }
   .oaspect-book .references p { padding-inline-start: 0.5in; text-indent: -0.5in; overflow-wrap: anywhere; }
   .oaspect-book a.external::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555; overflow-wrap: anywhere; }
-  .oaspect-book a.internal::after { content: " (p. " target-counter(attr(href url), page) ")"; color: #555; }
+  .oaspect-book a.internal::after { content: " (${pageAbbr} " target-counter(attr(href url), page) ")"; color: #555; }
 
   @page cover { margin: 0; ${noMargins} }
   @page :blank { ${noMargins} }
@@ -161,11 +161,12 @@ function apaCss(paper) {
 }
 
 /**
- * @param {{ style?: "book" | "apa", paper?: "A4" | "Letter", accent?: string }} options
+ * @param {{ style?: "book" | "apa", paper?: "A4" | "Letter", accent?: string, pageAbbr?: string }} options
  */
-export function printCss({ style = "book", paper = "A4", accent = "#16a34a" } = {}) {
+export function printCss({ style = "book", paper = "A4", accent = "#16a34a", pageAbbr = "p." } = {}) {
   const size = PAPER[paper] ?? PAPER.A4;
-  return shared(size) + (style === "apa" ? apaCss(size) : bookCss(size, accent));
+  // Goes into a CSS string: quotes and backslashes are dropped.
+  return shared(size, String(pageAbbr).replace(/["\\]/g, "")) + (style === "apa" ? apaCss(size) : bookCss(size, accent));
 }
 
 // What the app around the pages does on screen and when printing: the
